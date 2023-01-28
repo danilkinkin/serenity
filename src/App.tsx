@@ -18,7 +18,13 @@ import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise';
 
 function Grass(props) {
   const { perlin, x, y, quality, wind, ...restProps } = props;
-  const { width, height } = useControls('Grass', { width: 0.05, height: 1 })
+  const { width: rawWidth, height: rawHeight, randomize } = useControls('Grass', { width: 0.05, height: 1, randomize: 1 });
+  const [{ height, width }] = useState(() => {
+    const width = rawWidth + (Math.random() - 0.5) * randomize * rawWidth;
+    const height = rawHeight + (Math.random() - 0.5) * randomize * rawHeight;
+
+    return { height, width };
+  });
   const [randomShift, setRandomShift] = useState(() => (Math.random() - 0.5) * wind.calm);
   const [skeleton] = useState(() => {
     const bones = [];
