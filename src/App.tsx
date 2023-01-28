@@ -92,16 +92,16 @@ function Grass(props) {
   useFrame((state) => {
     const noise = perlin.noise((x + state.clock.elapsedTime * wind.speed) / wind.scale, y / wind.scale, 0);
     const boundedNoise = noise + 0.2;
-    const color = Math.max(Math.min(1 - (boundedNoise * 2 + 0.7), 0.8), 0);
+    const color = Math.max(Math.min(1 - (1 - boundedNoise), 0.6), 0);
 
     const angle = (Math.sin(state.clock.elapsedTime) * 10 * randomShift) / quality;
     const angleWinded = (wind.force * boundedNoise) / quality;
 
     skeleton.bones.forEach((bone, index) => {
-      if (index === 0) return;
+      const angleForce =  0.5 - Math.abs(index / (skeleton.bones.length - 1) - 0.5) + 0.25; 
 
-      bone.rotation.z = anglToRad(angle + angleWinded);
-      bone.rotation.y = anglToRad(angle);
+      bone.rotation.z = anglToRad(angle + angleWinded) * angleForce;
+      bone.rotation.y = anglToRad(angle) * angleForce;
     });
     materialRef.current.color = new Color(color, color, color)
   })
@@ -116,7 +116,7 @@ function Grass(props) {
 
 function Field() {
   const { density, size, randomizeShift } = useControls('Field', { density: 2, size: 10, randomizeShift: 1 });
-  const { force, calm, speed, scale } = useControls('Wind', { force: 100, calm: 4, speed: 30, scale: 70 });
+  const { force, calm, speed, scale } = useControls('Wind', { force: 170, calm: 4, speed: 30, scale: 70 });
   const [perlin] = useState(() => new ImprovedNoise());
   
   const countPerSide = density * size;
