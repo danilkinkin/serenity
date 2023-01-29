@@ -10,7 +10,6 @@ import {
   Skeleton,
   Bone,
   SkinnedMesh,
-  SkeletonHelper,
   Uint16BufferAttribute,
   Float32BufferAttribute,
   Vector3,
@@ -24,8 +23,8 @@ import {
   Group,
 } from 'three'
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
-import { Flow, InstancedFlow } from 'three/examples/jsm/modifiers/CurveModifier'
-import { useSpring, animated } from '@react-spring/three'
+import { Flow } from 'three/examples/jsm/modifiers/CurveModifier'
+import { useSpring } from '@react-spring/three'
 import { create } from 'zustand'
 
 interface WindState {
@@ -55,7 +54,7 @@ const useWindStore = create<WindState>((set) => ({
     scale: 70,
   },
   force: {
-    force: 170,
+    force: 220,
     calm: 4,
     speed: 30,
     scale: 70,
@@ -78,20 +77,16 @@ function Grass(props) {
     randomizeSize,
   } = useControls('Grass', { width: 0.05, height: 1, randomizeSize: 1 })
   const currWindShift = useRef<number>(0)
-  const windStore = {
-    force: 170,
-    calm: 4,
-    speed: 30,
-    scale: 70,
-  }
+  const windStore = useWindStore()
+  const springs = useSpring(windStore[windStore.variant])
   const [{ height, width }] = useState(() => {
     const width = rawWidth + randomize(randomizeSize * rawWidth)
     const height = rawHeight + randomize(randomizeSize * rawHeight)
 
     return { height, width }
   })
-  const [randomShift, setRandomShift] = useState(() =>
-    randomize(windStore.calm)
+  const [randomShift] = useState(() =>
+    randomize(springs.calm.get())
   )
   const [skeleton] = useState(() => {
     const bones = []
@@ -111,9 +106,6 @@ function Grass(props) {
   const materialRef = useRef<MeshStandardMaterial>(null)
   const meshRef = useRef<SkinnedMesh>(null)
   const geometryRef = useRef<PlaneGeometry>(null)
-  const { scene } = useThree()
-  const windStoreD = useWindStore()
-  const springs = useSpring(windStoreD[windStoreD.variant])
 
   useEffect(() => {
     geometryRef.current.translate(0, height / 2, 0)
@@ -151,17 +143,10 @@ function Grass(props) {
     meshRef.current.add(skeleton.bones[0])
     meshRef.current.bind(skeleton)
 
-    // const helper = new SkeletonHelper( meshRef.current );
-    // scene.add(helper);
-
     return () => {
       geometryRef.current.translate(0, -height / 2, 0)
     }
   }, [])
-
-  useEffect(() => {
-    setRandomShift(randomize(windStore.calm))
-  }, [windStore.calm])
 
   useFrame((state, delta) => {
     const speed = springs.speed.get()
@@ -182,13 +167,24 @@ function Grass(props) {
 
     const angle =
       (Math.sin(state.clock.elapsedTime) * 10 * randomShift) / quality
-    const angleWinded = (force * boundedNoise) / quality
+    const angleWinded = (force * boundedNoise + force / 4) / quality
+
+    let commulutiveAngle = 0
 
     skeleton.bones.forEach((bone, index) => {
       const angleForce =
         0.5 - Math.abs(index / (skeleton.bones.length - 1) - 0.5) + 0.25
 
-      bone.rotation.z = anglToRad(angle + angleWinded) * angleForce
+      const boneAngle = (angle + angleWinded) * angleForce
+
+      if (commulutiveAngle <= 90 && commulutiveAngle + boneAngle >= 90) {
+        bone.rotation.z = anglToRad(90 - commulutiveAngle)
+      } else if (commulutiveAngle <= 90) {
+        bone.rotation.z = anglToRad(boneAngle)
+      } else {
+        bone.rotation.z = anglToRad(0)
+      }
+      commulutiveAngle += boneAngle
       bone.rotation.y = anglToRad(angle) * angleForce
     })
     materialRef.current.color = new Color(color, color, color)
@@ -241,12 +237,12 @@ function Wind() {
   const [flows, setFlows] =
     useState<{ flow: Flow; speedShift: number; windMesh: Mesh }[]>(null)
   const windEffect = useControls('WindEffect', {
-    flowSize: 0.6,
-    flowLength: 6,
+    flowSize: 0.4,
+    flowLength: 4,
     steps: 10,
     randomizePath: 1,
-    randomizeSize: 0,
-    randomizeLength: 1,
+    randomizeSize: 0.3,
+    randomizeLength: 3,
     randomizeSpeed: 2,
   })
   const windStore = useWindStore()
@@ -345,14 +341,15 @@ function Wind() {
   }, [])
 
   useFrame((state, delta) => {
-    flows?.forEach(({ flow, speedShift, windMesh }) => {
+    flows?.forEach((flow) => {
       if (
-        flow.uniforms.pathOffset.value < 0.9 ||
+        flow.flow.uniforms.pathOffset.value < 0.9 ||
         windStore.variant === 'force'
       ) {
-        flow.moveAlongCurve(-0.01 * delta * windStore.force.speed * speedShift)
-        if (flow.uniforms.pathOffset.value <= 0.1) {
-          flow.moveAlongCurve(-flow.uniforms.pathOffset.value + 0.9)
+        flow.flow.moveAlongCurve(-0.01 * delta * windStore.force.speed * flow.speedShift)
+        if (flow.flow.uniforms.pathOffset.value <= 0.1) {
+          flow.flow.moveAlongCurve(-flow.flow.uniforms.pathOffset.value + 0.9)
+          flow.speedShift = (Math.random() + 0.5) * windEffect.randomizeSpeed;
         }
       }
     })
