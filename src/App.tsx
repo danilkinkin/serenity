@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useControls } from 'leva'
 import { anglToRad } from '@src/utils/angle'
+import { randomize } from '@src/utils/randomize';
 import { 
   MeshStandardMaterial, 
   PlaneGeometry, 
@@ -13,19 +14,28 @@ import {
   Uint16BufferAttribute,
   Float32BufferAttribute,
   Vector3,
+  Mesh,
+  CatmullRomCurve3,
+  LineLoop,
+  BufferGeometry,
+  LineBasicMaterial,
+  DoubleSide,
+  SphereGeometry,
+  Group,
 } from 'three';
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise';
+import { Flow, InstancedFlow } from 'three/examples/jsm/modifiers/CurveModifier';
 
 function Grass(props) {
   const { perlin, x, y, quality, wind, ...restProps } = props;
-  const { width: rawWidth, height: rawHeight, randomize } = useControls('Grass', { width: 0.05, height: 1, randomize: 1 });
+  const { width: rawWidth, height: rawHeight, randomizeSize } = useControls('Grass', { width: 0.05, height: 1, randomizeSize: 1 });
   const [{ height, width }] = useState(() => {
-    const width = rawWidth + (Math.random() - 0.5) * randomize * rawWidth;
-    const height = rawHeight + (Math.random() - 0.5) * randomize * rawHeight;
+    const width = rawWidth + randomize(randomizeSize * rawWidth);
+    const height = rawHeight + randomize(randomizeSize * rawHeight);
 
     return { height, width };
   });
-  const [randomShift, setRandomShift] = useState(() => (Math.random() - 0.5) * wind.calm);
+  const [randomShift, setRandomShift] = useState(() => randomize(wind.calm));
   const [skeleton] = useState(() => {
     const bones = [];
 
@@ -85,7 +95,7 @@ function Grass(props) {
   }, []);
 
   useEffect(() => {
-    setRandomShift((Math.random() - 0.5) * wind.calm);
+    setRandomShift(randomize(wind.calm));
   }, [wind.calm]);
 
 
@@ -114,9 +124,9 @@ function Grass(props) {
   )
 }
 
-function Field() {
+function Field(props) {
+  const { wind } = props;
   const { density, size, randomizeShift } = useControls('Field', { density: 2, size: 10, randomizeShift: 1 });
-  const { force, calm, speed, scale } = useControls('Wind', { force: 170, calm: 4, speed: 30, scale: 70 });
   const [perlin] = useState(() => new ImprovedNoise());
   
   const countPerSide = density * size;
@@ -138,16 +148,11 @@ function Field() {
                   x={x}
                   y={y}
                   quality={4}
-                  wind={{
-                    force,
-                    calm,
-                    speed,
-                    scale,
-                  }}
+                  wind={wind}
                   position={[
-                    x * shiftDistancePerSide - halfShift + (Math.random() - 0.5) * randomizeShift, 
+                    x * shiftDistancePerSide - halfShift + randomize(randomizeShift), 
                     0, 
-                    y * shiftDistancePerSide - halfShift + (Math.random() - 0.5) * randomizeShift,
+                    y * shiftDistancePerSide - halfShift + randomize(randomizeShift),
                   ]}
                 />
               ))
@@ -157,14 +162,120 @@ function Field() {
   )
 }
 
+function Wind(props) {
+  const { wind } = props;
+  const { scene, camera } = useThree();
+  const [flows, setFlows] = useState<{ flow: Flow, speedShift: number, windMesh: Mesh }[]>(null);
+  const windEffect = useControls('WindEffect', { 
+    flowSize: 0.6,
+    flowLength: 6,
+    steps: 10,
+    randomizePath: 1,
+    randomizeSize: 0,
+    randomizeLength: 1,
+    randomizeSpeed: 1,
+  });
+
+  const leftX = -30;
+  const rightX = 30;
+
+  const createFlow = (y: number, z: number) => {
+    const stepSize = (rightX - leftX) / (windEffect.steps - 1);
+    const points = [
+      new Vector3(rightX, 5, camera.position.z + 5),
+      new Vector3(leftX, 5, camera.position.z + 5),
+      ...Array
+        .from({ length: windEffect.steps })
+        .map((_, index) => new Vector3(
+          leftX + index * stepSize, 
+          y + ((index % 2) * 2 - 1) * 0.1 + randomize(windEffect.randomizePath), 
+          z,
+        )),
+    ];
+    const curve = new CatmullRomCurve3(points);
+    curve.curveType = "centripetal";
+    curve.closed = true;
+
+    const speedShift = (Math.random() + 0.5) * windEffect.randomizeSpeed;
+    const length = windEffect.flowLength + randomize(windEffect.randomizeLength);
+    const geometry = new PlaneGeometry(
+      length, 
+      windEffect.flowSize + randomize(windEffect.randomizeSize), 
+      length, 
+      1,
+    );
+    const material = new MeshStandardMaterial({ color: new Color(0.8, 0.8, 0.8), side: DoubleSide });
+    const mesh = new Mesh(geometry, material);
+    
+    const flow = new Flow( mesh );
+    flow.updateCurve( 0, curve );
+    // flow.moveAlongCurve( Math.random() * 10 );
+
+    const debug = new Group();
+
+    const line = new LineLoop(
+      new BufferGeometry().setFromPoints(curve.getPoints( 50 )),
+      new LineBasicMaterial( { color: new Color(0.3, 0.3, 0.8) } )
+    );
+    debug.add(line);
+    const materialDebugPoint = new MeshStandardMaterial({ color: new Color(0.3, 0.3, 0.8) });
+    const geometryDebugPoint = new SphereGeometry(0.1, 4, 3);
+    points.map((point) => {
+      const pointMesh = new Mesh(geometryDebugPoint, materialDebugPoint);
+      pointMesh.position.set(point.x, point.y, point.z);
+
+      debug.add(pointMesh);
+    })
+
+    return { flow, debug, speedShift, windMesh: mesh }
+  };
+
+  useEffect(() => {
+    const rawFlows = [
+      createFlow(5, 0),
+      createFlow(3, 0),
+      createFlow(10, 0),
+      createFlow(1, 0),
+      createFlow(9, 0),
+      createFlow(5.2, 0),
+    ];
+
+    rawFlows.forEach(({ flow, debug }) => {
+      scene.add(flow.object3D);
+      // scene.add(debug);
+    });
+    
+    setFlows(rawFlows.map(({ flow, speedShift, windMesh }) => ({ flow, speedShift, windMesh })));
+
+    return () => {
+      rawFlows.forEach(({ flow, debug }) => {
+        scene.remove(flow.object3D);
+        // scene.remove(debug);
+      });
+    };
+  }, []);
+
+  useFrame((state, delta) => {
+    flows?.forEach(({ flow, speedShift, windMesh }) => {
+      flow.moveAlongCurve( -0.01 * delta * wind.speed * speedShift );
+      windMesh.lookAt( camera.position );
+    });
+  })
+
+  return null;
+}
+
 function App() {
+  const wind = useControls('Wind', { force: 170, calm: 4, speed: 30, scale: 70 });
+
   return (
     <Canvas
       camera={{ fov: 75, near: 0.1, far: 1000, position: [0, 10, 15] }}
     >
       <ambientLight />
       <pointLight position={[10, 10, 10]} />
-      <Field />
+      <Field wind={wind} />
+      <Wind wind={wind} />
     </Canvas>
   )
 }
