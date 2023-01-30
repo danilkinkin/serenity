@@ -26,6 +26,8 @@ import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { Flow } from 'three/examples/jsm/modifiers/CurveModifier'
 import { useSpring } from '@react-spring/three'
 import { create } from 'zustand'
+import { Model as Island } from './Island'
+import { CameraControls, PerspectiveCamera } from '@react-three/drei'
 
 interface WindState {
   variant: 'calm' | 'force'
@@ -232,7 +234,7 @@ function Field() {
   )
 }
 
-function Wind() {
+function WindEffect() {
   const { scene, camera } = useThree()
   const [flows, setFlows] =
     useState<{ flow: Flow; speedShift: number; windMesh: Mesh }[]>(null)
@@ -277,7 +279,7 @@ function Wind() {
       1
     )
 
-    geometry.rotateX(-camera.rotation.x)
+    geometry.rotateX(anglToRad(70))
     const material = new MeshStandardMaterial({
       color: new Color(0.8, 0.8, 0.8),
       side: DoubleSide,
@@ -310,18 +312,20 @@ function Wind() {
 
   useEffect(() => {
     const rawFlows = [
-      createFlow(5, 0),
-      createFlow(3, 0),
-      createFlow(10, 0),
-      createFlow(1, 0),
-      createFlow(9, 0),
-      createFlow(5.2, 0),
+      createFlow(5, -3),
+      createFlow(2, 3.6),
+      createFlow(4, 3.5),
+      createFlow(3, -0.3),
+      createFlow(7, 2),
+      createFlow(1, 6),
+      createFlow(9, -2),
+      createFlow(5.2, 1.4),
     ]
 
     rawFlows.forEach(({ flow, debug }) => {
       flow.moveAlongCurve(-flow.uniforms.pathOffset.value + 0.9)
       scene.add(flow.object3D)
-      //scene.add(debug);
+      // scene.add(debug);
     })
 
     setFlows(
@@ -335,7 +339,7 @@ function Wind() {
     return () => {
       rawFlows.forEach(({ flow, debug }) => {
         scene.remove(flow.object3D)
-        //scene.remove(debug);
+        // scene.remove(debug);
       })
     }
   }, [])
@@ -358,6 +362,35 @@ function Wind() {
   return null
 }
 
+function Scene() {
+  const cameraRef = useRef(null);
+
+  useFrame(() => {
+
+    cameraRef.current?.lookAt(-2, 3, 1)
+  })
+
+  return (
+    <>
+      <PerspectiveCamera
+        ref={cameraRef}      
+        makeDefault 
+        fov={45} 
+        near={0.1} 
+        far={1000} 
+        position={[0, 4, 18]} 
+      />
+      {/* <CameraControls enabled={false} /> */}
+      <axesHelper args={[5]} position={[-2, 3, 1]} />
+      <ambientLight />
+      <pointLight position={[10, 10, 10]} />
+      {/* <Field /> */}
+      <Island rotation={[0, anglToRad(-110), 0]} />
+      <WindEffect />
+    </>
+  )
+}
+
 function App() {
   const windUser = useControls('Wind', {
     force: 170,
@@ -377,18 +410,18 @@ function App() {
     window.addEventListener('mousedown', forceWind)
     window.addEventListener('mouseup', calmWind)
 
+
     return () => {
       window.removeEventListener('mousedown', forceWind)
       window.removeEventListener('mouseup', calmWind)
     }
   }, [])
 
+  
+
   return (
-    <Canvas camera={{ fov: 75, near: 0.1, far: 1000, position: [0, 10, 15] }}>
-      <ambientLight />
-      <pointLight position={[10, 10, 10]} />
-      <Field />
-      <Wind />
+    <Canvas>
+      <Scene />
     </Canvas>
   )
 }
