@@ -21,6 +21,7 @@ import {
   DoubleSide,
   SphereGeometry,
   Group,
+  SkeletonHelper,
 } from 'three'
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { Flow } from 'three/examples/jsm/modifiers/CurveModifier'
@@ -71,21 +72,21 @@ const useWindStore = create<WindState>((set) => ({
     }),
 }))
 
-function Grass(props) {
-  const { perlin, x, y, quality, ...restProps } = props
-  const {
-    width: rawWidth,
-    height: rawHeight,
-    randomizeSize,
-  } = useControls('Grass', { width: 0.05, height: 1, randomizeSize: 1 })
+export function Grass(props) {
+  const { perlin, quality, material, geometry: sketchGeometry, position, resistance = 1, ...restProps } = props
+  const { scene } = useThree()
   const currWindShift = useRef<number>(0)
   const windStore = useWindStore()
   const springs = useSpring(windStore[windStore.variant])
-  const [{ height, width }] = useState(() => {
-    const width = rawWidth + randomize(randomizeSize * rawWidth)
-    const height = rawHeight + randomize(randomizeSize * rawHeight)
+  const [{ height, width, geometry }] = useState(() => {
+    const width = sketchGeometry.boundingBox.min.x - sketchGeometry.boundingBox.max.x;
+    const height = sketchGeometry.boundingBox.min.z - sketchGeometry.boundingBox.max.z;
+    const geometry = new PlaneGeometry(width, height, 1, quality * 2);
 
-    return { height, width }
+    geometry.rotateX(anglToRad(-90))
+    geometry.rotateZ(anglToRad(180))
+
+    return { height, width, geometry }
   })
   const [randomShift] = useState(() =>
     randomize(springs.calm.get())
@@ -96,7 +97,8 @@ function Grass(props) {
     Array.from({ length: quality + 1 }).forEach((_, index) => {
       const bone = new Bone()
 
-      if (index !== 0) bone.position.y = height / quality
+      if (index !== 0) bone.position.z = height / quality
+      else bone.position.z = -height / 2
 
       const prevBone = bones[bones.length - 1]
       if (prevBone) prevBone.add(bone)
@@ -105,39 +107,36 @@ function Grass(props) {
 
     return new Skeleton(bones)
   })
-  const materialRef = useRef<MeshStandardMaterial>(null)
   const meshRef = useRef<SkinnedMesh>(null)
   const geometryRef = useRef<PlaneGeometry>(null)
 
   useEffect(() => {
-    geometryRef.current.translate(0, height / 2, 0)
-
-    const position = geometryRef.current.attributes.position
+    const position = geometry.attributes.position
     const vertex = new Vector3()
 
     const skinIndices = []
     const skinWeights = []
 
     const segmentHeight = height / quality
-    const halfHeight = segmentHeight / 2
+    const halfHeight = height / 2
 
     for (let i = 0; i < position.count; i++) {
       vertex.fromBufferAttribute(position, i)
 
-      const y = vertex.y + halfHeight
+      const y = vertex.z + halfHeight
 
       const skinIndex = Math.floor(y / segmentHeight)
-      const skinWeight = 0
+      const skinWeight = ( y % segmentHeight ) / segmentHeight;
 
       skinIndices.push(skinIndex, skinIndex + 1, 0, 0)
       skinWeights.push(1 - skinWeight, skinWeight, 0, 0)
     }
 
-    geometryRef.current.setAttribute(
+    geometry.setAttribute(
       'skinIndex',
       new Uint16BufferAttribute(skinIndices, 4)
     )
-    geometryRef.current.setAttribute(
+    geometry.setAttribute(
       'skinWeight',
       new Float32BufferAttribute(skinWeights, 4)
     )
@@ -145,9 +144,9 @@ function Grass(props) {
     meshRef.current.add(skeleton.bones[0])
     meshRef.current.bind(skeleton)
 
-    return () => {
-      geometryRef.current.translate(0, -height / 2, 0)
-    }
+    const helper = new SkeletonHelper(meshRef.current);
+
+    //scene.add(helper)
   }, [])
 
   useFrame((state, delta) => {
@@ -158,14 +157,11 @@ function Grass(props) {
     currWindShift.current = currWindShift.current + delta * speed
 
     const noise = perlin.noise(
-      (x + currWindShift.current) / scale,
-      y / scale,
-      0
+      (position[0] + currWindShift.current) / scale,
+      position[1] / scale,
+      position[2]
     )
     const boundedNoise = noise + 0.2
-    const color =
-      Math.max(Math.min(1 - (1 - boundedNoise), 0.6), 0) *
-      (Math.min(force, 100) / 100)
 
     const angle =
       (Math.sin(state.clock.elapsedTime) * 10 * randomShift) / quality
@@ -177,25 +173,23 @@ function Grass(props) {
       const angleForce =
         0.5 - Math.abs(index / (skeleton.bones.length - 1) - 0.5) + 0.25
 
-      const boneAngle = (angle + angleWinded) * angleForce
+      const boneAngle = (angle + angleWinded) * angleForce / resistance
 
       if (commulutiveAngle <= 90 && commulutiveAngle + boneAngle >= 90) {
-        bone.rotation.z = anglToRad(90 - commulutiveAngle)
+        bone.rotation.y = anglToRad(90 - commulutiveAngle)
       } else if (commulutiveAngle <= 90) {
-        bone.rotation.z = anglToRad(boneAngle)
+        bone.rotation.y = anglToRad(boneAngle)
       } else {
-        bone.rotation.z = anglToRad(0)
+        bone.rotation.y = anglToRad(0)
       }
       commulutiveAngle += boneAngle
-      bone.rotation.y = anglToRad(angle) * angleForce
+      // bone.rotation.x = anglToRad(angle) * angleForce * 6
     })
-    materialRef.current.color = new Color(color, color, color)
   })
 
   return (
-    <skinnedMesh {...restProps} ref={meshRef}>
-      <planeGeometry args={[width, height, 1, quality]} ref={geometryRef} />
-      <meshStandardMaterial color={[0, 0, 0]} ref={materialRef} />
+    <skinnedMesh {...restProps} position={position} ref={meshRef} material={material} geometry={geometry}>
+      {/* <planeGeometry args={[width, height, 1, quality]} ref={geometryRef} /> */}
     </skinnedMesh>
   )
 }
