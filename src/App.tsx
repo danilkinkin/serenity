@@ -48,7 +48,7 @@ interface WindState {
   calmWind: () => void
 }
 
-const useWindStore = create<WindState>((set) => ({
+export const useWindStore = create<WindState>((set) => ({
   variant: 'calm',
   calm: {
     force: 10,
@@ -59,7 +59,7 @@ const useWindStore = create<WindState>((set) => ({
   force: {
     force: 220,
     calm: 4,
-    speed: 30,
+    speed: 50,
     scale: 70,
   },
   forceWind: () =>
@@ -77,7 +77,14 @@ export function Grass(props) {
   const { scene } = useThree()
   const currWindShift = useRef<number>(0)
   const windStore = useWindStore()
-  const springs = useSpring(windStore[windStore.variant])
+  const springs = useSpring({
+    ...windStore[windStore.variant],
+    config: {
+      mass: 5,
+      friction: 120,
+      tension: 120,
+    }
+  })
   const [{ height, width, geometry }] = useState(() => {
     const width = sketchGeometry.boundingBox.min.x - sketchGeometry.boundingBox.max.x;
     const height = sketchGeometry.boundingBox.min.z - sketchGeometry.boundingBox.max.z;
@@ -344,7 +351,7 @@ function WindEffect() {
         flow.flow.uniforms.pathOffset.value < 0.9 ||
         windStore.variant === 'force'
       ) {
-        flow.flow.moveAlongCurve(-0.01 * delta * windStore.force.speed * flow.speedShift)
+        flow.flow.moveAlongCurve(-0.005 * delta * windStore.force.speed * flow.speedShift)
         if (flow.flow.uniforms.pathOffset.value <= 0.1) {
           flow.flow.moveAlongCurve(-flow.flow.uniforms.pathOffset.value + 0.9)
           flow.speedShift = (Math.random() + 0.5) * windEffect.randomizeSpeed;
@@ -376,6 +383,7 @@ function Scene() {
       />
       {/* <CameraControls enabled={false} /> */}
       <axesHelper args={[5]} position={[-2, 3, 1]} />
+      <axesHelper args={[2]} position={[0, 0, 0]} />
       <ambientLight />
       <pointLight position={[10, 10, 10]} />
       {/* <Field /> */}
