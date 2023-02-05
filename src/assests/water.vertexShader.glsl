@@ -75,12 +75,12 @@ void main() {
   float time = uTime * 0.5;
   vUv = uv;
   vec3 newPos = position.xyz;
-  //newPos.z += 0.8*sin(time/1.8 + repeat*uv.y) + 0.8 * cos(time/2.0 + repeat*uv.x);
+  newPos.z += 0.05*sin(time/1.8 + repeat*uv.y) + 0.05 * cos(time/2.0 + repeat*uv.x);
   viewZ = -(modelViewMatrix * vec4(newPos, 1.)).xyz;
 
   #include <begin_vertex>
   #include <project_vertex>
   #include <fog_vertex>
-  
+
   gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
 }

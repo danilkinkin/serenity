@@ -27,10 +27,6 @@ float readDepth( sampler2D depthSampler, vec2 coord ) {
 
 void main() {
   vec2 uv = vUv;
-  vec4 foam = vec4(1.0, 1.0, 1.0, 1.0);
-  vec4 blue  = vec4(0.0, 0.0, 1.0, 1.0);
-  vec4 deepBlue  = vec4(0.0, 0.0, 0.5, 1.0);
-
 
   float time = uTime * 0.001;
   float distanceDark = 8.0;

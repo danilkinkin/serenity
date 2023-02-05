@@ -6,33 +6,58 @@ Command: npx gltfjsx@6.1.4 embient.glb --transform
 import React, { useEffect, useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Color, DepthTexture, Group, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshPhysicalMaterial, MeshStandardMaterial, NearestFilter, NoBlending, RepeatWrapping, RGBADepthPacking, ShaderMaterial, TextureLoader, UniformsLib, UniformsUtils, UnsignedShortType, Vector2, WebGLRenderTarget, RGBAFormat, CanvasTexture, Texture, DataTexture } from 'three'
+import {
+  Color,
+  DepthTexture,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  MeshDepthMaterial,
+  MeshPhysicalMaterial,
+  MeshStandardMaterial,
+  NearestFilter,
+  NoBlending,
+  RepeatWrapping,
+  RGBADepthPacking,
+  ShaderMaterial,
+  TextureLoader,
+  UniformsLib,
+  UniformsUtils,
+  UnsignedShortType,
+  Vector2,
+  WebGLRenderTarget,
+  RGBAFormat,
+  CanvasTexture,
+  Texture,
+  DoubleSide,
+} from 'three'
 import { Grass, useWindStore } from './App'
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { useSpring } from '@react-spring/three'
-import waterFragmentShader from '@src/assests/water.fragmentShader.glsl?raw';
-import waterVertexShader from '@src/assests/water.vertexShader.glsl?raw';
+import waterFragmentShader from '@src/assests/water.fragmentShader.glsl?raw'
+import waterVertexShader from '@src/assests/water.vertexShader.glsl?raw'
 
 export function Model(props) {
   const { nodes, materials } = useGLTF('/objects/island.glb')
-  const waterMeshRef = useRef<Mesh>(null)
-  const shipAnchorRef = useRef<Group>(null)
+  const waterMeshRef = useRef<Mesh>(null);
+  const shipAnchorRef = useRef<Group>(null);
+  const grassGroupRef = useRef<Group>(null);
   const [perlin] = useState(() => new ImprovedNoise())
-  const composerRef = useRef();
+  const composerRef = useRef()
   const { camera, gl, size, scene } = useThree()
   console.log('size:', size)
 
   const [{ renderTarget }] = useState(() => {
-    const renderTarget = new WebGLRenderTarget(1000, 1000);
-    renderTarget.texture.format = RGBAFormat;
-    renderTarget.texture.generateMipmaps = false;
-    renderTarget.stencilBuffer = false;
-    renderTarget.depthBuffer = true;
-    renderTarget.depthTexture = new DepthTexture(1000, 1000);
-    renderTarget.depthTexture.type = UnsignedShortType;
+    const renderTarget = new WebGLRenderTarget(1000, 1000)
+    renderTarget.texture.format = RGBAFormat
+    renderTarget.texture.generateMipmaps = false
+    renderTarget.stencilBuffer = false
+    renderTarget.depthBuffer = true
+    renderTarget.depthTexture = new DepthTexture(1000, 1000)
+    renderTarget.depthTexture.type = UnsignedShortType
 
-    return { renderTarget };
-  });
+    return { renderTarget }
+  })
 
   const windStore = useWindStore()
   const springsMove = useSpring({
@@ -41,7 +66,7 @@ export function Model(props) {
       mass: 50,
       friction: 220,
       tension: 90,
-    }
+    },
   })
   const springsAngle = useSpring({
     ...windStore[windStore.variant],
@@ -49,7 +74,7 @@ export function Model(props) {
       mass: 60,
       friction: 200,
       tension: 800,
-    }
+    },
   })
 
   useFrame((state) => {
@@ -57,730 +82,1728 @@ export function Model(props) {
     const angleFactor = springsAngle.speed.get() * springsAngle.force.get()
 
     // waterMeshRef.current.position.y = 0.03 + 0.05 * Math.sin(state.clock.elapsedTime)
-    shipAnchorRef.current.position.z = moveFactor / 30000;
+    shipAnchorRef.current.position.z = moveFactor / 30000
     shipAnchorRef.current.position.y = 0.05 * Math.sin(state.clock.elapsedTime)
-    shipAnchorRef.current.rotation.x = 0.05 * Math.sin(state.clock.elapsedTime * 2) + angleFactor / 40000
-    shipAnchorRef.current.rotation.z = 0.05 * Math.sin(state.clock.elapsedTime * 1.5)
+    shipAnchorRef.current.rotation.x =
+      0.05 * Math.sin(state.clock.elapsedTime * 2) + angleFactor / 40000
+    shipAnchorRef.current.rotation.z =
+      0.05 * Math.sin(state.clock.elapsedTime * 1.5)
   })
 
-  const debugLeafMaterial = new MeshStandardMaterial({ wireframe: true, color: new Color(0x000000) });
+  const debugLeafMaterial = new MeshStandardMaterial({
+    wireframe: true,
+    color: new Color(0x000000),
+  })
 
-  const getMaterial = (name: string) => materials[name];
+  const getMaterial = (name: string) => {
+    materials[name].side = DoubleSide;
+    materials[name].alphaTest = 0;
+    materials[name].depthWrite = false;
+    materials[name].transparent = true;
+    materials[name].needsUpdate = true;
+
+    return materials[name]
+  }
 
   const [{ waterMaterial, depthMaterial }] = useState(() => {
-    const textureLoader = new TextureLoader();
-    var dudvMap = textureLoader.load(
-      "https://i.imgur.com/hOIsXiZ.png"
-    );
-    dudvMap.wrapS = dudvMap.wrapT = RepeatWrapping;
+    const textureLoader = new TextureLoader()
+    var dudvMap = textureLoader.load('https://i.imgur.com/hOIsXiZ.png')
+    dudvMap.wrapS = dudvMap.wrapT = RepeatWrapping
 
     console.log('renderer.extensions:', gl.extensions)
 
     var uniforms = {
       resolution: {
-        value: new Vector2()
+        value: new Vector2(),
       },
       depth_map: {
-        value: null
+        value: null,
       },
       map: {
-        value: null
+        value: null,
       },
       camera_near: {
-        value: 0
+        value: 0,
       },
       camera_far: {
-        value: 0
+        value: 0,
       },
       uTime: {
-        value: 0
+        value: 0,
       },
       color_foam: {
-        value: new Color()
+        value: new Color(),
       },
       color_shallow: {
-        value: new Color()
+        value: new Color(),
       },
       color_deep: {
-        value: new Color()
+        value: new Color(),
       },
       opacity_shallow: {
-        value: 0.2
+        value: 0.2,
       },
       opacity_deep: {
-        value: 1.0
+        value: 1.0,
       },
       opacity_foam: {
-        value: 0.6
+        value: 0.6,
       },
       repeat: {
-        value: 10
+        value: 10,
       },
       max_depth: {
-        value: 3
+        value: 3,
       },
-    };
+    }
 
     var waterMaterial = new ShaderMaterial({
-      uniforms: UniformsUtils.merge([UniformsLib["fog"], uniforms]),
+      uniforms: UniformsUtils.merge([UniformsLib['fog'], uniforms]),
       vertexShader: waterVertexShader,
       fragmentShader: waterFragmentShader,
       transparent: true,
       //wireframe: true,
       fog: true,
-    });
+    })
 
-    waterMaterial.uniforms.color_foam.value.set(0xffffff);
-    waterMaterial.uniforms.color_shallow.value.set(0x14c6a5);
-    waterMaterial.uniforms.color_deep.value.set(0x000000);
-    waterMaterial.uniforms.depth_map.value = renderTarget.depthTexture;
+    waterMaterial.uniforms.color_foam.value.set(0xffffff)
+    waterMaterial.uniforms.color_shallow.value.set(0x14c6a5)
+    waterMaterial.uniforms.color_deep.value.set(0x001680)
+    waterMaterial.uniforms.depth_map.value = renderTarget.depthTexture
 
     const depthMaterial = new MeshBasicMaterial({
-      colorWrite: false
-    });
+      colorWrite: false,
+    })
 
     return { waterMaterial, depthMaterial }
   })
 
-
   function powerOfTwo(x) {
-    return Math.pow(2, Math.floor(Math.log(x)/Math.log(2)));
+    return Math.pow(2, Math.floor(Math.log(x) / Math.log(2)))
   }
 
   useFrame(({ gl, clock }) => {
-    waterMaterial.uniforms.camera_near.value = camera.near;
-    waterMaterial.uniforms.camera_far.value = camera.far;    
-    waterMaterial.uniforms.uTime.value = clock.elapsedTime;
+    waterMaterial.uniforms.camera_near.value = camera.near
+    waterMaterial.uniforms.camera_far.value = camera.far
+    waterMaterial.uniforms.uTime.value = clock.elapsedTime
 
-    const temp = new Vector2();
+    const temp = new Vector2()
 
-    gl.getDrawingBufferSize(temp);
-    waterMaterial.uniforms.resolution.value = temp;
-    renderTarget.setSize( powerOfTwo(temp.x), powerOfTwo(temp.y) );
+    gl.getDrawingBufferSize(temp)
+    waterMaterial.uniforms.resolution.value = temp
+    renderTarget.setSize(powerOfTwo(temp.x), powerOfTwo(temp.y))
 
     waterMeshRef.current.visible = false;
-    gl.setRenderTarget(renderTarget);
-    scene.overrideMaterial = depthMaterial;
-    
-    gl.render(scene, camera);
+    grassGroupRef.current.visible = false;
+    gl.setRenderTarget(renderTarget)
+    scene.overrideMaterial = depthMaterial
 
-    gl.setRenderTarget(null);    
+    gl.render(scene, camera)
+
+    gl.setRenderTarget(null)
     waterMeshRef.current.visible = true;
+    grassGroupRef.current.visible = true;
     scene.overrideMaterial = null;
   }, -1)
-      
+
   return (
     <group {...props} dispose={null}>
       {/* Water */}
-      <mesh 
+      <mesh
         ref={waterMeshRef}
-        material={waterMaterial || materials['Material.011']} 
+        material={waterMaterial || materials['Material.011']}
         rotation={[-Math.PI / 2, 0, 0]}
       >
         <planeGeometry args={[100, 100, 300, 300]} />
       </mesh>
       {/* Grass */}
-      <Grass 
-        geometry={nodes.leaf_2_1.geometry} 
-        material={getMaterial('Group 2')} 
-        position={[0.61, 3.43, 4.72]} 
-        rotation={[1.57, 0.02, -1.79]} 
-        scale={6.97}
-        quality={6}
-        resistance={5}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_3_1.geometry} 
-        material={getMaterial('Group 3')} 
-        position={[0.79, 3.85, 4.32]} 
-        rotation={[1.59, -0.03, -1.88]} 
-        scale={6.89}
-        quality={6}
-        resistance={3}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_1_1.geometry} 
-        material={getMaterial('Group 11')} 
-        position={[-0.73, 3.7, 3.05]} 
-        rotation={[1.64, 0.16, -1.9]} 
-        scale={6.26}
-        quality={6}
-        resistance={5}
-        perlin={perlin}
-      />
-      <mesh geometry={nodes.leaf_9_1.geometry} material={materials['Group 13']} position={[-3.13, 0.27, -4.2]} rotation={[1.58, 0.06, -1.61]} scale={0.09} />
-      <mesh geometry={nodes.leaf_9_1001.geometry} material={materials['Group 13']} position={[-3.18, 0.29, -4.22]} rotation={[1.72, 0.02, -0.96]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1002.geometry} material={materials['Group 13']} position={[-3.6, 0.25, -4.37]} rotation={[1.47, 0.03, -1.86]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1003.geometry} material={materials['Group 13']} position={[-3.65, 0.25, -4.33]} rotation={[1.59, 0.06, -1.76]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1004.geometry} material={materials['Group 13']} position={[-3.56, 0.25, -4.33]} rotation={[1.71, -0.08, -1.63]} scale={0.11} />
-      <mesh geometry={nodes.leaf_9_1005.geometry} material={materials['Group 13']} position={[-3.1, 0.29, -4.19]} rotation={[1.5, -0.08, -0.75]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1006.geometry} material={materials['Group 13']} position={[-3.15, 0.29, -4.14]} rotation={[1.54, 0.05, -0.94]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1007.geometry} material={materials['Group 13']} position={[-3.6, 0.25, -4.29]} rotation={[1.73, 0.01, -1.08]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1008.geometry} material={materials['Group 13']} position={[-3.19, 0.29, -4.14]} rotation={[1.46, 0.01, -1.59]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1009.geometry} material={materials['Group 13']} position={[-3.63, 0.25, -4.66]} rotation={[1.58, 0.06, -1.61]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1010.geometry} material={materials['Group 13']} position={[-3.66, 0.25, -4.66]} rotation={[1.73, 0.01, -1.05]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1011.geometry} material={materials['Group 13']} position={[-3.59, 0.25, -4.65]} rotation={[1.47, -0.04, -1.19]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1012.geometry} material={materials['Group 13']} position={[-3.61, 0.24, -4.71]} rotation={[1.6, 0.06, -1.85]} scale={0.12} />
-      <mesh geometry={nodes.leaf_9_1013.geometry} material={materials['Group 13']} position={[-3.62, 0.2, -4.67]} rotation={[1.71, -0.08, -1.63]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1014.geometry} material={materials['Group 13']} position={[-3.59, 0.23, -4.69]} rotation={[1.48, -0.06, -0.99]} scale={0.09} />
-      <mesh geometry={nodes.leaf_9_1015.geometry} material={materials['Group 13']} position={[-3.63, 0.24, -4.74]} rotation={[1.52, 0.04, -0.55]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1016.geometry} material={materials['Group 13']} position={[-3.67, 0.24, -4.72]} rotation={[1.71, -0.08, -1.63]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1017.geometry} material={materials['Group 13']} position={[-3.58, 0.24, -4.76]} rotation={[1.49, -0.07, -0.84]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1018.geometry} material={materials['Group 13']} position={[-3.31, 0.25, -4.46]} rotation={[1.58, 0.06, -1.61]} scale={0.07} />
-      <mesh geometry={nodes.leaf_9_1019.geometry} material={materials['Group 13']} position={[-3.3, 0.26, -4.44]} rotation={[1.72, 0.03, -0.94]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1020.geometry} material={materials['Group 13']} position={[-3.31, 0.26, -4.46]} rotation={[1.54, -0.1, -0.24]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1021.geometry} material={materials['Group 13']} position={[-3.58, 0.29, -3.89]} rotation={[1.58, 0.06, -1.61]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1022.geometry} material={materials['Group 13']} position={[-3.64, 0.29, -3.85]} rotation={[1.71, -0.08, -1.63]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1023.geometry} material={materials['Group 13']} position={[-3.49, 0.28, -3.92]} rotation={[1.47, -0.03, -1.22]} scale={0.11} />
-      <mesh geometry={nodes.leaf_9_1024.geometry} material={materials['Group 13']} position={[-3.59, 0.29, -3.91]} rotation={[1.58, 0.06, -1.61]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1025.geometry} material={materials['Group 13']} position={[-3.52, 0.29, -3.9]} rotation={[1.72, -0.02, -1.26]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1026.geometry} material={materials['Group 13']} position={[-3.55, 0.29, -3.94]} rotation={[1.5, 0.08, -2.4]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1027.geometry} material={materials['Group 13']} position={[-3.58, 0.29, -3.87]} rotation={[1.56, 0.06, -1.23]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1028.geometry} material={materials['Group 13']} position={[-3.55, 0.29, -3.85]} rotation={[1.72, -0.02, -1.26]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1029.geometry} material={materials['Group 13']} position={[-3.5, 0.29, -3.88]} rotation={[1.46, 0.01, -1.59]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1030.geometry} material={materials['Group 13']} position={[-3.55, 0.27, -3.82]} rotation={[1.81, -0.01, -1.64]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1031.geometry} material={materials['Group 13']} position={[-3.55, 0.27, -3.81]} rotation={[1.93, -0.15, -1.65]} scale={0.08} />
-      <mesh geometry={nodes.leaf_9_1032.geometry} material={materials['Group 13']} position={[-3.55, 0.27, -3.82]} rotation={[1.69, -0.06, -1.64]} scale={0.08} />
-      <mesh geometry={nodes.leaf_9_1033.geometry} material={materials['Group 13']} position={[-5.57, 0.21, -0.97]} rotation={[1.58, 0.06, -1.61]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1034.geometry} material={materials['Group 13']} position={[-5.39, 0.21, -0.96]} rotation={[1.71, -0.08, -1.63]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1035.geometry} material={materials['Group 13']} position={[-5.11, 0.2, -1.02]} rotation={[1.47, -0.03, -1.22]} scale={0.11} />
-      <mesh geometry={nodes.leaf_9_1036.geometry} material={materials['Group 13']} position={[-5.33, 0.21, -1.02]} rotation={[1.58, 0.06, -1.61]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1037.geometry} material={materials['Group 13']} position={[-5.15, 0.21, -0.88]} rotation={[1.72, -0.02, -1.26]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1038.geometry} material={materials['Group 13']} position={[-5.3, 0.21, -1.05]} rotation={[1.5, 0.08, -2.4]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1039.geometry} material={materials['Group 13']} position={[-5.13, 0.22, -0.86]} rotation={[1.56, 0.06, -1.23]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1040.geometry} material={materials['Group 13']} position={[-5.22, 0.22, -0.92]} rotation={[1.72, -0.02, -1.26]} scale={0.17} />
-      <mesh geometry={nodes.leaf_9_1041.geometry} material={materials['Group 13']} position={[-5.26, 0.22, -0.79]} rotation={[1.46, 0.01, -1.59]} scale={0.18} />
-      <mesh geometry={nodes.leaf_9_1042.geometry} material={materials['Group 13']} position={[-5.3, 0.2, -0.92]} rotation={[1.93, -0.15, -1.65]} scale={0.08} />
-      <mesh geometry={nodes.leaf_9_1043.geometry} material={materials['Group 13']} position={[-5.34, 0.2, -0.82]} rotation={[1.69, -0.06, -1.64]} scale={0.08} />
-      <mesh geometry={nodes.leaf_9_1044.geometry} material={materials['Group 13']} position={[-4.74, 0.31, 0.03]} rotation={[1.58, 0.06, -1.61]} scale={0.16} />
-      <mesh geometry={nodes.leaf_9_1045.geometry} material={materials['Group 13']} position={[-4.79, 0.31, 0.06]} rotation={[1.71, -0.08, -1.63]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1046.geometry} material={materials['Group 13']} position={[-4.67, 0.3, 0.01]} rotation={[1.47, -0.03, -1.22]} scale={0.08} />
-      <mesh geometry={nodes.leaf_9_1047.geometry} material={materials['Group 13']} position={[-4.74, 0.31, 0.02]} rotation={[1.58, 0.06, -1.61]} scale={0.16} />
-      <mesh geometry={nodes.leaf_9_1048.geometry} material={materials['Group 13']} position={[-4.69, 0.31, 0.03]} rotation={[1.72, -0.02, -1.26]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1049.geometry} material={materials['Group 13']} position={[-4.71, 0.31, 0]} rotation={[1.5, 0.08, -2.4]} scale={0.14} />
-      <mesh geometry={nodes.leaf_9_1050.geometry} material={materials['Group 13']} position={[-4.74, 0.31, 0.05]} rotation={[1.56, 0.06, -1.23]} scale={0.16} />
-      <mesh geometry={nodes.leaf_9_1051.geometry} material={materials['Group 13']} position={[-4.71, 0.32, 0.07]} rotation={[1.72, -0.02, -1.26]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1052.geometry} material={materials['Group 13']} position={[-4.68, 0.31, 0.04]} rotation={[1.46, 0.01, -1.59]} scale={0.14} />
-      <mesh geometry={nodes.leaf_9_1053.geometry} material={materials['Group 13']} position={[-4.71, 0.3, 0.09]} rotation={[1.93, -0.15, -1.65]} scale={0.06} />
-      <mesh geometry={nodes.leaf_9_1054.geometry} material={materials['Group 13']} position={[-4.71, 0.3, 0.09]} rotation={[1.69, -0.06, -1.64]} scale={0.06} />
-      <mesh geometry={nodes.leaf_9_1055.geometry} material={materials['Group 13']} position={[-0.83, 0.43, 1.34]} rotation={[1.58, 0.06, -1.61]} scale={0.16} />
-      <mesh geometry={nodes.leaf_9_1056.geometry} material={materials['Group 13']} position={[-0.88, 0.43, 1.38]} rotation={[1.71, -0.08, -1.63]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1057.geometry} material={materials['Group 13']} position={[-0.68, 0.42, 1.29]} rotation={[1.47, -0.03, -1.22]} scale={0.08} />
-      <mesh geometry={nodes.leaf_9_1058.geometry} material={materials['Group 13']} position={[-0.84, 0.43, 1.33]} rotation={[1.58, 0.06, -1.61]} scale={0.16} />
-      <mesh geometry={nodes.leaf_9_1059.geometry} material={materials['Group 13']} position={[-0.79, 0.43, 1.34]} rotation={[1.72, -0.02, -1.26]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1060.geometry} material={materials['Group 13']} position={[-0.9, 0.43, 1.29]} rotation={[1.5, 0.08, -2.4]} scale={0.14} />
-      <mesh geometry={nodes.leaf_9_1061.geometry} material={materials['Group 13']} position={[-0.83, 0.43, 1.36]} rotation={[1.56, 0.06, -1.23]} scale={0.16} />
-      <mesh geometry={nodes.leaf_9_1062.geometry} material={materials['Group 13']} position={[-0.81, 0.44, 1.38]} rotation={[1.72, -0.02, -1.26]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1063.geometry} material={materials['Group 13']} position={[-0.77, 0.43, 1.35]} rotation={[1.46, 0.01, -1.59]} scale={0.14} />
-      <mesh geometry={nodes.leaf_9_1064.geometry} material={materials['Group 13']} position={[-0.81, 0.42, 1.41]} rotation={[1.93, -0.15, -1.65]} scale={0.06} />
-      <mesh geometry={nodes.leaf_9_1065.geometry} material={materials['Group 13']} position={[-0.7, 0.42, 1.39]} rotation={[1.69, -0.06, -1.64]} scale={0.06} />
-      <mesh geometry={nodes.leaf_9_1066.geometry} material={materials['Group 13']} position={[-0.41, 0.5, 1.56]} rotation={[1.58, 0.06, -1.61]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1067.geometry} material={materials['Group 13']} position={[-0.48, 0.5, 1.6]} rotation={[1.71, -0.08, -1.63]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1068.geometry} material={materials['Group 13']} position={[-0.14, 0.49, 1.47]} rotation={[1.47, -0.03, -1.22]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1069.geometry} material={materials['Group 13']} position={[-0.41, 0.5, 1.53]} rotation={[1.58, 0.06, -1.61]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1070.geometry} material={materials['Group 13']} position={[-0.34, 0.5, 1.55]} rotation={[1.72, -0.02, -1.26]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1071.geometry} material={materials['Group 13']} position={[-0.38, 0.5, 1.45]} rotation={[1.5, 0.08, -2.4]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1072.geometry} material={materials['Group 13']} position={[-0.4, 0.5, 1.58]} rotation={[1.56, 0.06, -1.23]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1073.geometry} material={materials['Group 13']} position={[-0.36, 0.5, 1.61]} rotation={[1.72, -0.02, -1.26]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1074.geometry} material={materials['Group 13']} position={[-0.31, 0.5, 1.57]} rotation={[1.46, 0.01, -1.59]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1075.geometry} material={materials['Group 13']} position={[-0.37, 0.48, 1.7]} rotation={[1.93, -0.15, -1.65]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1076.geometry} material={materials['Group 13']} position={[-0.37, 0.48, 1.64]} rotation={[1.69, -0.06, -1.64]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1077.geometry} material={materials['Group 13']} position={[2.35, 0.94, 2.54]} rotation={[1.58, 0.06, -1.61]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1078.geometry} material={materials['Group 13']} position={[2.28, 0.94, 2.59]} rotation={[1.71, -0.08, -1.63]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1079.geometry} material={materials['Group 13']} position={[2.46, 0.93, 2.51]} rotation={[1.47, -0.03, -1.22]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1080.geometry} material={materials['Group 13']} position={[2.35, 0.94, 2.52]} rotation={[1.58, 0.06, -1.61]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1081.geometry} material={materials['Group 13']} position={[2.42, 0.94, 2.53]} rotation={[1.72, -0.02, -1.26]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1082.geometry} material={materials['Group 13']} position={[2.39, 0.94, 2.49]} rotation={[1.5, 0.08, -2.4]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1083.geometry} material={materials['Group 13']} position={[2.36, 0.94, 2.56]} rotation={[1.56, 0.06, -1.23]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1084.geometry} material={materials['Group 13']} position={[2.39, 0.94, 2.59]} rotation={[1.72, -0.02, -1.26]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1085.geometry} material={materials['Group 13']} position={[2.44, 0.94, 2.55]} rotation={[1.46, 0.01, -1.59]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1086.geometry} material={materials['Group 13']} position={[2.39, 0.92, 2.64]} rotation={[1.93, -0.15, -1.65]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1087.geometry} material={materials['Group 13']} position={[2.39, 0.92, 2.62]} rotation={[1.69, -0.06, -1.64]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1088.geometry} material={materials['Group 13']} position={[6.17, 1.18, 2.97]} rotation={[1.53, -0.05, 0.98]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1089.geometry} material={materials['Group 13']} position={[6.21, 1.18, 2.89]} rotation={[1.5, 0.14, 0.96]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1090.geometry} material={materials['Group 13']} position={[6.1, 1.16, 3.06]} rotation={[1.68, -0.02, 1.36]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1091.geometry} material={materials['Group 13']} position={[6.19, 1.17, 2.98]} rotation={[1.53, -0.05, 0.98]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1092.geometry} material={materials['Group 13']} position={[6.12, 1.18, 3.01]} rotation={[1.45, 0.1, 1.33]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1093.geometry} material={materials['Group 13']} position={[6.17, 1.17, 3.03]} rotation={[1.59, -0.11, 0.18]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1094.geometry} material={materials['Group 13']} position={[6.16, 1.18, 2.95]} rotation={[1.55, -0.06, 1.35]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1095.geometry} material={materials['Group 13']} position={[6.11, 1.18, 2.95]} rotation={[1.45, 0.1, 1.33]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1096.geometry} material={materials['Group 13']} position={[6.09, 1.18, 3]} rotation={[1.66, -0.06, 0.99]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1097.geometry} material={materials['Group 13']} position={[6.09, 1.16, 2.91]} rotation={[1.34, 0.32, 0.94]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1098.geometry} material={materials['Group 13']} position={[6.1, 1.16, 2.91]} rotation={[1.5, 0.12, 0.95]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1099.geometry} material={materials['Group 13']} position={[5.68, 1.17, 2.85]} rotation={[1.63, 0.01, -2.9]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1100.geometry} material={materials['Group 13']} position={[5.71, 1.17, 2.94]} rotation={[1.53, -0.15, -2.93]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1101.geometry} material={materials['Group 13']} position={[5.68, 1.16, 2.74]} rotation={[1.51, 0.09, -2.51]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1102.geometry} material={materials['Group 13']} position={[5.66, 1.17, 2.85]} rotation={[1.63, 0.01, -2.9]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1103.geometry} material={materials['Group 13']} position={[5.69, 1.17, 2.79]} rotation={[1.59, -0.15, -2.55]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1104.geometry} material={materials['Group 13']} position={[5.64, 1.17, 2.8]} rotation={[1.63, 0.09, 2.58]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1105.geometry} material={materials['Group 13']} position={[5.7, 1.17, 2.86]} rotation={[1.62, 0.03, -2.53]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1106.geometry} material={materials['Group 13']} position={[5.74, 1.17, 2.83]} rotation={[1.59, -0.15, -2.55]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1107.geometry} material={materials['Group 13']} position={[5.72, 1.17, 2.77]} rotation={[1.55, 0.1, -2.89]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1108.geometry} material={materials['Group 13']} position={[5.78, 1.15, 2.84]} rotation={[1.52, -0.39, -2.99]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1109.geometry} material={materials['Group 13']} position={[5.77, 1.15, 2.84]} rotation={[1.54, -0.13, -2.94]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1110.geometry} material={materials['Group 13']} position={[6.29, 1.14, 3.63]} rotation={[1.63, 0.01, -2.9]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1111.geometry} material={materials['Group 13']} position={[6.31, 1.15, 3.72]} rotation={[1.53, -0.15, -2.93]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1112.geometry} material={materials['Group 13']} position={[6.28, 1.13, 3.52]} rotation={[1.51, 0.09, -2.51]} scale={0.13} />
-      <mesh geometry={nodes.leaf_9_1113.geometry} material={materials['Group 13']} position={[6.26, 1.14, 3.63]} rotation={[1.63, 0.01, -2.9]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1114.geometry} material={materials['Group 13']} position={[6.3, 1.14, 3.57]} rotation={[1.59, -0.15, -2.55]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1115.geometry} material={materials['Group 13']} position={[6.24, 1.14, 3.58]} rotation={[1.63, 0.09, 2.58]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1116.geometry} material={materials['Group 13']} position={[6.31, 1.15, 3.64]} rotation={[1.62, 0.03, -2.53]} scale={0.24} />
-      <mesh geometry={nodes.leaf_9_1117.geometry} material={materials['Group 13']} position={[6.35, 1.15, 3.61]} rotation={[1.59, -0.15, -2.55]} scale={0.2} />
-      <mesh geometry={nodes.leaf_9_1118.geometry} material={materials['Group 13']} position={[6.33, 1.15, 3.55]} rotation={[1.55, 0.1, -2.89]} scale={0.21} />
-      <mesh geometry={nodes.leaf_9_1119.geometry} material={materials['Group 13']} position={[6.39, 1.13, 3.62]} rotation={[1.52, -0.39, -2.99]} scale={0.1} />
-      <mesh geometry={nodes.leaf_9_1120.geometry} material={materials['Group 13']} position={[6.38, 1.13, 3.62]} rotation={[1.54, -0.13, -2.94]} scale={0.1} />
-      <Grass 
-        geometry={nodes.leaf_2_2.geometry} 
-        material={getMaterial('leaf_2_2')} 
-        position={[-0.41, 2.06, 2.32]} 
-        rotation={[1.26, 0.07, -1.77]} 
-        scale={3.39}
-        quality={6}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_3_2.geometry} 
-        material={getMaterial('leaf_3_2')} 
-        position={[2.1, 2.5, 4.67]} 
-        rotation={[1.51, -0.01, -2.07]} 
-        scale={3.62}
-        quality={6}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_3_3.geometry} 
-        material={getMaterial('leaf_3_3')} 
-        position={[-0.34, 2.23, 3]} 
-        rotation={[1.6, 0.11, -1.89]} 
-        scale={3.08}
-        quality={6}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_4_1.geometry} 
-        material={getMaterial('leaf_4_1')} 
-        position={[5.86, 1.4, 2.81]} 
-        rotation={[1.47, 0.04, -1.88]} 
-        scale={0.53}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_4_2.geometry} 
-        material={getMaterial('leaf_4_2')} 
-        position={[6.19, 1.41, 3.59]}
-        rotation={[1.64, -0.02, -2.06]} 
-        scale={0.64} 
-        quality={3}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_4_5.geometry} 
-        material={getMaterial('leaf_4_5')} 
-        position={[4.69, 1.37, 4.31]} 
-        rotation={[1.5, -0.25, -2.38]} 
-        scale={0.64}
-        quality={3}
-        resistance={1.5}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_4_6.geometry} 
-        material={getMaterial('leaf_4_6')} 
-        position={[5.64, 1.45, 3.05]} 
-        rotation={[Math.PI / 2, 0, -2.06]} 
-        scale={0.64}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_4_7.geometry} 
-        material={getMaterial('leaf_4_7')} 
-        position={[6.03, 1.38, 2.97]} 
-        rotation={[1.41, 0.06, -2.02]} 
-        scale={0.52}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_5_1.geometry} 
-        material={getMaterial('leaf_5_1')} 
-        position={[-0.97, 1, 1.47]} 
-        rotation={[1.67, -0.01, -1.92]} 
-        scale={1.17}
-        quality={3}
-        resistance={1.5}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_5_2.geometry} 
-        material={getMaterial('leaf_5_2')} 
-        position={[2.58, 1.26, 3.36]} 
-        rotation={[1.31, 0.08, -1.84]} 
-        scale={0.92}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_5_3.geometry} 
-        material={getMaterial('leaf_5_3')} 
-        position={[-0.87, 0.9, 1.21]} 
-        rotation={[1.41, 0.05, -1.89]}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_5_4.geometry} 
-        material={getMaterial('leaf_5_4')} 
-        position={[-0.62, 0.74, 1.44]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.67}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_6_1.geometry} 
-        material={getMaterial('leaf_6_1')} 
-        position={[0.45, 1.03, 1.91]} 
-        rotation={[1.56, -0.08, -1.93]} 
-        scale={0.91}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_6_2.geometry} 
-        material={getMaterial('leaf_6_2')} 
-        position={[-0.03, 0.9, 2.02]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.79}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_6_3.geometry} 
-        material={getMaterial('leaf_6_3')} 
-        position={[0.04, 0.93, 1.74]} 
-        rotation={[1.58, 0.08, -1.88]} 
-        scale={0.86}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_7_1.geometry} 
-        material={getMaterial('leaf_7_1')} 
-        position={[-3.73, 0.27, -4.8]} 
-        rotation={[1.5, 0.12, -1.74]} 
-        scale={0.2}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_7_2.geometry} 
-        material={getMaterial('leaf_7_2')} 
-        position={[-3.72, 0.27, -4.8]} 
-        rotation={[1.5, 0.03, -1.75]} 
-        scale={0.2}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_7_3.geometry} 
-        material={getMaterial('leaf_7_3')} 
-        position={[-3.69, 0.28, -4.75]} 
-        rotation={[1.48, -0.04, -1.75]} 
-        scale={0.2}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_1.geometry} 
-        material={getMaterial('leaf_8_1')} 
-        position={[6.25, 1.27, 3.41]} 
-        rotation={[1.82, -0.1, -2]} 
-        scale={0.34}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_1001.geometry} 
-        material={getMaterial('leaf_8_1')} 
-        position={[3.74, 1.14, 3.39]} 
-        rotation={[1.93, 0.06, -1.88]} 
-        scale={0.34}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_2.geometry} 
-        material={getMaterial('leaf_8_2')} 
-        position={[-5.64, 0.41, -0.55]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.58}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_2001.geometry} 
-        material={getMaterial('leaf_8_2')} 
-        position={[-3.78, 0.48, -3.96]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.58}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_2002.geometry} 
-        material={getMaterial('leaf_8_2')} 
-        position={[-0.33, 0.74, 2.35]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.58}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_3.geometry} 
-        material={getMaterial('leaf_8_3')} 
-        position={[5.92, 1.3, 2.68]} 
-        rotation={[1.34, 0.14, -1.78]} 
-        scale={0.34}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_3001.geometry} 
-        material={getMaterial('leaf_8_3')} 
-        position={[-5.47, 0.36, -0.99]} 
-        rotation={[1.34, 0.14, -1.78]} 
-        scale={0.45}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_3002.geometry} 
-        material={getMaterial('leaf_8_3')} 
-        position={[-3.52, 0.39, -4.46]} 
-        rotation={[1.34, 0.14, -1.78]} 
-        scale={0.45}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_3003.geometry} 
-        material={getMaterial('leaf_8_3')} 
-        position={[2.36, 0.99, 2.38]} 
-        rotation={[1.34, 0.14, -1.78]} 
-        scale={0.45}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_3004.geometry} 
-        material={getMaterial('leaf_8_3')} 
-        position={[3.78, 1.08, 3.34]} 
-        rotation={[1.1, 0.21, -1.7]} 
-        scale={0.29}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_4.geometry} 
-        material={getMaterial('leaf_8_4')} 
-        position={[5.8, 1.3, 3.7]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.34}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_4001.geometry} 
-        material={getMaterial('leaf_8_4')} 
-        position={[-5.32, 0.37, -0.74]} 
-        rotation={[1.6, 0.01, -1.89]} 
-        scale={0.43}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_4002.geometry} 
-        material={getMaterial('leaf_8_4')} 
-        position={[-3.21, 0.41, -4.26]} 
-        rotation={[1.6, 0.01, -1.89]} 
-        scale={0.43}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_4003.geometry} 
-        material={getMaterial('leaf_8_4')} 
-        position={[1.01, 0.83, 2.09]} 
-        rotation={[1.38, -0.17, -2]} 
-        scale={0.43}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_4004.geometry} 
-        material={getMaterial('leaf_8_4')} 
-        position={[2.85, 1.06, 3.32]} 
-        rotation={[1.43, 0.07, -1.87]} 
-        scale={0.34}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_5.geometry} 
-        material={getMaterial('leaf_8_5')} 
-        position={[-4.8, 0.54, -0.04]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.58}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_5001.geometry} 
-        material={getMaterial('leaf_8_5')} 
-        position={[-4.1, 0.46, -4.98]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.58}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_5002.geometry} 
-        material={getMaterial('leaf_8_5')} 
-        position={[0.42, 0.8, 1.14]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.58}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_6.geometry} 
-        material={getMaterial('leaf_8_6')} 
-        position={[-4.92, 0.51, 0.18]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.58}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_6001.geometry} 
-        material={getMaterial('leaf_8_6')} 
-        position={[-4.19, 0.47, -4.64]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.58}
-        quality={3}
-        resistance={1}
-        perlin={perlin}
-      />
-      <Grass 
-        geometry={nodes.leaf_8_6002.geometry} 
-        material={getMaterial('leaf_8_6')} 
-        position={[0.32, 0.8, 1.36]} 
-        rotation={[Math.PI / 2, 0, -1.91]} 
-        scale={0.58}
-        quality={3}
-        resistance={2}
-        perlin={perlin}
-      />
+      <group ref={grassGroupRef} renderOrder={1}>
+        <Grass
+          geometry={nodes.leaf_2_1.geometry}
+          material={getMaterial('Group 2')}
+          position={[0.61, 3.43, 4.72]}
+          rotation={[1.57, 0.02, -1.79]}
+          scale={6.97}
+          quality={6}
+          resistance={5}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_3_1.geometry}
+          material={getMaterial('Group 3')}
+          position={[0.79, 3.85, 4.32]}
+          rotation={[1.59, -0.03, -1.88]}
+          scale={6.89}
+          quality={6}
+          resistance={3}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_1_1.geometry}
+          material={getMaterial('Group 11')}
+          position={[-0.73, 3.7, 3.05]}
+          rotation={[1.64, 0.16, -1.9]}
+          scale={6.26}
+          quality={6}
+          resistance={5}
+          perlin={perlin}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1.geometry}
+          material={materials['Group 13']}
+          position={[-3.13, 0.27, -4.2]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.09}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1001.geometry}
+          material={materials['Group 13']}
+          position={[-3.18, 0.29, -4.22]}
+          rotation={[1.72, 0.02, -0.96]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1002.geometry}
+          material={materials['Group 13']}
+          position={[-3.6, 0.25, -4.37]}
+          rotation={[1.47, 0.03, -1.86]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1003.geometry}
+          material={materials['Group 13']}
+          position={[-3.65, 0.25, -4.33]}
+          rotation={[1.59, 0.06, -1.76]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1004.geometry}
+          material={materials['Group 13']}
+          position={[-3.56, 0.25, -4.33]}
+          rotation={[1.71, -0.08, -1.63]}
+          scale={0.11}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1005.geometry}
+          material={materials['Group 13']}
+          position={[-3.1, 0.29, -4.19]}
+          rotation={[1.5, -0.08, -0.75]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1006.geometry}
+          material={materials['Group 13']}
+          position={[-3.15, 0.29, -4.14]}
+          rotation={[1.54, 0.05, -0.94]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1007.geometry}
+          material={materials['Group 13']}
+          position={[-3.6, 0.25, -4.29]}
+          rotation={[1.73, 0.01, -1.08]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1008.geometry}
+          material={materials['Group 13']}
+          position={[-3.19, 0.29, -4.14]}
+          rotation={[1.46, 0.01, -1.59]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1009.geometry}
+          material={materials['Group 13']}
+          position={[-3.63, 0.25, -4.66]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1010.geometry}
+          material={materials['Group 13']}
+          position={[-3.66, 0.25, -4.66]}
+          rotation={[1.73, 0.01, -1.05]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1011.geometry}
+          material={materials['Group 13']}
+          position={[-3.59, 0.25, -4.65]}
+          rotation={[1.47, -0.04, -1.19]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1012.geometry}
+          material={materials['Group 13']}
+          position={[-3.61, 0.24, -4.71]}
+          rotation={[1.6, 0.06, -1.85]}
+          scale={0.12}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1013.geometry}
+          material={materials['Group 13']}
+          position={[-3.62, 0.2, -4.67]}
+          rotation={[1.71, -0.08, -1.63]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1014.geometry}
+          material={materials['Group 13']}
+          position={[-3.59, 0.23, -4.69]}
+          rotation={[1.48, -0.06, -0.99]}
+          scale={0.09}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1015.geometry}
+          material={materials['Group 13']}
+          position={[-3.63, 0.24, -4.74]}
+          rotation={[1.52, 0.04, -0.55]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1016.geometry}
+          material={materials['Group 13']}
+          position={[-3.67, 0.24, -4.72]}
+          rotation={[1.71, -0.08, -1.63]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1017.geometry}
+          material={materials['Group 13']}
+          position={[-3.58, 0.24, -4.76]}
+          rotation={[1.49, -0.07, -0.84]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1018.geometry}
+          material={materials['Group 13']}
+          position={[-3.31, 0.25, -4.46]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.07}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1019.geometry}
+          material={materials['Group 13']}
+          position={[-3.3, 0.26, -4.44]}
+          rotation={[1.72, 0.03, -0.94]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1020.geometry}
+          material={materials['Group 13']}
+          position={[-3.31, 0.26, -4.46]}
+          rotation={[1.54, -0.1, -0.24]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1021.geometry}
+          material={materials['Group 13']}
+          position={[-3.58, 0.29, -3.89]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1022.geometry}
+          material={materials['Group 13']}
+          position={[-3.64, 0.29, -3.85]}
+          rotation={[1.71, -0.08, -1.63]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1023.geometry}
+          material={materials['Group 13']}
+          position={[-3.49, 0.28, -3.92]}
+          rotation={[1.47, -0.03, -1.22]}
+          scale={0.11}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1024.geometry}
+          material={materials['Group 13']}
+          position={[-3.59, 0.29, -3.91]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1025.geometry}
+          material={materials['Group 13']}
+          position={[-3.52, 0.29, -3.9]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1026.geometry}
+          material={materials['Group 13']}
+          position={[-3.55, 0.29, -3.94]}
+          rotation={[1.5, 0.08, -2.4]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1027.geometry}
+          material={materials['Group 13']}
+          position={[-3.58, 0.29, -3.87]}
+          rotation={[1.56, 0.06, -1.23]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1028.geometry}
+          material={materials['Group 13']}
+          position={[-3.55, 0.29, -3.85]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1029.geometry}
+          material={materials['Group 13']}
+          position={[-3.5, 0.29, -3.88]}
+          rotation={[1.46, 0.01, -1.59]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1030.geometry}
+          material={materials['Group 13']}
+          position={[-3.55, 0.27, -3.82]}
+          rotation={[1.81, -0.01, -1.64]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1031.geometry}
+          material={materials['Group 13']}
+          position={[-3.55, 0.27, -3.81]}
+          rotation={[1.93, -0.15, -1.65]}
+          scale={0.08}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1032.geometry}
+          material={materials['Group 13']}
+          position={[-3.55, 0.27, -3.82]}
+          rotation={[1.69, -0.06, -1.64]}
+          scale={0.08}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1033.geometry}
+          material={materials['Group 13']}
+          position={[-5.57, 0.21, -0.97]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1034.geometry}
+          material={materials['Group 13']}
+          position={[-5.39, 0.21, -0.96]}
+          rotation={[1.71, -0.08, -1.63]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1035.geometry}
+          material={materials['Group 13']}
+          position={[-5.11, 0.2, -1.02]}
+          rotation={[1.47, -0.03, -1.22]}
+          scale={0.11}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1036.geometry}
+          material={materials['Group 13']}
+          position={[-5.33, 0.21, -1.02]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1037.geometry}
+          material={materials['Group 13']}
+          position={[-5.15, 0.21, -0.88]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1038.geometry}
+          material={materials['Group 13']}
+          position={[-5.3, 0.21, -1.05]}
+          rotation={[1.5, 0.08, -2.4]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1039.geometry}
+          material={materials['Group 13']}
+          position={[-5.13, 0.22, -0.86]}
+          rotation={[1.56, 0.06, -1.23]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1040.geometry}
+          material={materials['Group 13']}
+          position={[-5.22, 0.22, -0.92]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.17}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1041.geometry}
+          material={materials['Group 13']}
+          position={[-5.26, 0.22, -0.79]}
+          rotation={[1.46, 0.01, -1.59]}
+          scale={0.18}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1042.geometry}
+          material={materials['Group 13']}
+          position={[-5.3, 0.2, -0.92]}
+          rotation={[1.93, -0.15, -1.65]}
+          scale={0.08}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1043.geometry}
+          material={materials['Group 13']}
+          position={[-5.34, 0.2, -0.82]}
+          rotation={[1.69, -0.06, -1.64]}
+          scale={0.08}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1044.geometry}
+          material={materials['Group 13']}
+          position={[-4.74, 0.31, 0.03]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.16}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1045.geometry}
+          material={materials['Group 13']}
+          position={[-4.79, 0.31, 0.06]}
+          rotation={[1.71, -0.08, -1.63]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1046.geometry}
+          material={materials['Group 13']}
+          position={[-4.67, 0.3, 0.01]}
+          rotation={[1.47, -0.03, -1.22]}
+          scale={0.08}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1047.geometry}
+          material={materials['Group 13']}
+          position={[-4.74, 0.31, 0.02]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.16}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1048.geometry}
+          material={materials['Group 13']}
+          position={[-4.69, 0.31, 0.03]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1049.geometry}
+          material={materials['Group 13']}
+          position={[-4.71, 0.31, 0]}
+          rotation={[1.5, 0.08, -2.4]}
+          scale={0.14}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1050.geometry}
+          material={materials['Group 13']}
+          position={[-4.74, 0.31, 0.05]}
+          rotation={[1.56, 0.06, -1.23]}
+          scale={0.16}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1051.geometry}
+          material={materials['Group 13']}
+          position={[-4.71, 0.32, 0.07]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1052.geometry}
+          material={materials['Group 13']}
+          position={[-4.68, 0.31, 0.04]}
+          rotation={[1.46, 0.01, -1.59]}
+          scale={0.14}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1053.geometry}
+          material={materials['Group 13']}
+          position={[-4.71, 0.3, 0.09]}
+          rotation={[1.93, -0.15, -1.65]}
+          scale={0.06}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1054.geometry}
+          material={materials['Group 13']}
+          position={[-4.71, 0.3, 0.09]}
+          rotation={[1.69, -0.06, -1.64]}
+          scale={0.06}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1055.geometry}
+          material={materials['Group 13']}
+          position={[-0.83, 0.43, 1.34]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.16}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1056.geometry}
+          material={materials['Group 13']}
+          position={[-0.88, 0.43, 1.38]}
+          rotation={[1.71, -0.08, -1.63]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1057.geometry}
+          material={materials['Group 13']}
+          position={[-0.68, 0.42, 1.29]}
+          rotation={[1.47, -0.03, -1.22]}
+          scale={0.08}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1058.geometry}
+          material={materials['Group 13']}
+          position={[-0.84, 0.43, 1.33]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.16}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1059.geometry}
+          material={materials['Group 13']}
+          position={[-0.79, 0.43, 1.34]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1060.geometry}
+          material={materials['Group 13']}
+          position={[-0.9, 0.43, 1.29]}
+          rotation={[1.5, 0.08, -2.4]}
+          scale={0.14}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1061.geometry}
+          material={materials['Group 13']}
+          position={[-0.83, 0.43, 1.36]}
+          rotation={[1.56, 0.06, -1.23]}
+          scale={0.16}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1062.geometry}
+          material={materials['Group 13']}
+          position={[-0.81, 0.44, 1.38]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1063.geometry}
+          material={materials['Group 13']}
+          position={[-0.77, 0.43, 1.35]}
+          rotation={[1.46, 0.01, -1.59]}
+          scale={0.14}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1064.geometry}
+          material={materials['Group 13']}
+          position={[-0.81, 0.42, 1.41]}
+          rotation={[1.93, -0.15, -1.65]}
+          scale={0.06}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1065.geometry}
+          material={materials['Group 13']}
+          position={[-0.7, 0.42, 1.39]}
+          rotation={[1.69, -0.06, -1.64]}
+          scale={0.06}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1066.geometry}
+          material={materials['Group 13']}
+          position={[-0.41, 0.5, 1.56]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1067.geometry}
+          material={materials['Group 13']}
+          position={[-0.48, 0.5, 1.6]}
+          rotation={[1.71, -0.08, -1.63]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1068.geometry}
+          material={materials['Group 13']}
+          position={[-0.14, 0.49, 1.47]}
+          rotation={[1.47, -0.03, -1.22]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1069.geometry}
+          material={materials['Group 13']}
+          position={[-0.41, 0.5, 1.53]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1070.geometry}
+          material={materials['Group 13']}
+          position={[-0.34, 0.5, 1.55]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1071.geometry}
+          material={materials['Group 13']}
+          position={[-0.38, 0.5, 1.45]}
+          rotation={[1.5, 0.08, -2.4]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1072.geometry}
+          material={materials['Group 13']}
+          position={[-0.4, 0.5, 1.58]}
+          rotation={[1.56, 0.06, -1.23]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1073.geometry}
+          material={materials['Group 13']}
+          position={[-0.36, 0.5, 1.61]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1074.geometry}
+          material={materials['Group 13']}
+          position={[-0.31, 0.5, 1.57]}
+          rotation={[1.46, 0.01, -1.59]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1075.geometry}
+          material={materials['Group 13']}
+          position={[-0.37, 0.48, 1.7]}
+          rotation={[1.93, -0.15, -1.65]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1076.geometry}
+          material={materials['Group 13']}
+          position={[-0.37, 0.48, 1.64]}
+          rotation={[1.69, -0.06, -1.64]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1077.geometry}
+          material={materials['Group 13']}
+          position={[2.35, 0.94, 2.54]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1078.geometry}
+          material={materials['Group 13']}
+          position={[2.28, 0.94, 2.59]}
+          rotation={[1.71, -0.08, -1.63]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1079.geometry}
+          material={materials['Group 13']}
+          position={[2.46, 0.93, 2.51]}
+          rotation={[1.47, -0.03, -1.22]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1080.geometry}
+          material={materials['Group 13']}
+          position={[2.35, 0.94, 2.52]}
+          rotation={[1.58, 0.06, -1.61]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1081.geometry}
+          material={materials['Group 13']}
+          position={[2.42, 0.94, 2.53]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1082.geometry}
+          material={materials['Group 13']}
+          position={[2.39, 0.94, 2.49]}
+          rotation={[1.5, 0.08, -2.4]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1083.geometry}
+          material={materials['Group 13']}
+          position={[2.36, 0.94, 2.56]}
+          rotation={[1.56, 0.06, -1.23]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1084.geometry}
+          material={materials['Group 13']}
+          position={[2.39, 0.94, 2.59]}
+          rotation={[1.72, -0.02, -1.26]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1085.geometry}
+          material={materials['Group 13']}
+          position={[2.44, 0.94, 2.55]}
+          rotation={[1.46, 0.01, -1.59]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1086.geometry}
+          material={materials['Group 13']}
+          position={[2.39, 0.92, 2.64]}
+          rotation={[1.93, -0.15, -1.65]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1087.geometry}
+          material={materials['Group 13']}
+          position={[2.39, 0.92, 2.62]}
+          rotation={[1.69, -0.06, -1.64]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1088.geometry}
+          material={materials['Group 13']}
+          position={[6.17, 1.18, 2.97]}
+          rotation={[1.53, -0.05, 0.98]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1089.geometry}
+          material={materials['Group 13']}
+          position={[6.21, 1.18, 2.89]}
+          rotation={[1.5, 0.14, 0.96]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1090.geometry}
+          material={materials['Group 13']}
+          position={[6.1, 1.16, 3.06]}
+          rotation={[1.68, -0.02, 1.36]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1091.geometry}
+          material={materials['Group 13']}
+          position={[6.19, 1.17, 2.98]}
+          rotation={[1.53, -0.05, 0.98]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1092.geometry}
+          material={materials['Group 13']}
+          position={[6.12, 1.18, 3.01]}
+          rotation={[1.45, 0.1, 1.33]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1093.geometry}
+          material={materials['Group 13']}
+          position={[6.17, 1.17, 3.03]}
+          rotation={[1.59, -0.11, 0.18]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1094.geometry}
+          material={materials['Group 13']}
+          position={[6.16, 1.18, 2.95]}
+          rotation={[1.55, -0.06, 1.35]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1095.geometry}
+          material={materials['Group 13']}
+          position={[6.11, 1.18, 2.95]}
+          rotation={[1.45, 0.1, 1.33]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1096.geometry}
+          material={materials['Group 13']}
+          position={[6.09, 1.18, 3]}
+          rotation={[1.66, -0.06, 0.99]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1097.geometry}
+          material={materials['Group 13']}
+          position={[6.09, 1.16, 2.91]}
+          rotation={[1.34, 0.32, 0.94]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1098.geometry}
+          material={materials['Group 13']}
+          position={[6.1, 1.16, 2.91]}
+          rotation={[1.5, 0.12, 0.95]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1099.geometry}
+          material={materials['Group 13']}
+          position={[5.68, 1.17, 2.85]}
+          rotation={[1.63, 0.01, -2.9]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1100.geometry}
+          material={materials['Group 13']}
+          position={[5.71, 1.17, 2.94]}
+          rotation={[1.53, -0.15, -2.93]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1101.geometry}
+          material={materials['Group 13']}
+          position={[5.68, 1.16, 2.74]}
+          rotation={[1.51, 0.09, -2.51]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1102.geometry}
+          material={materials['Group 13']}
+          position={[5.66, 1.17, 2.85]}
+          rotation={[1.63, 0.01, -2.9]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1103.geometry}
+          material={materials['Group 13']}
+          position={[5.69, 1.17, 2.79]}
+          rotation={[1.59, -0.15, -2.55]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1104.geometry}
+          material={materials['Group 13']}
+          position={[5.64, 1.17, 2.8]}
+          rotation={[1.63, 0.09, 2.58]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1105.geometry}
+          material={materials['Group 13']}
+          position={[5.7, 1.17, 2.86]}
+          rotation={[1.62, 0.03, -2.53]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1106.geometry}
+          material={materials['Group 13']}
+          position={[5.74, 1.17, 2.83]}
+          rotation={[1.59, -0.15, -2.55]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1107.geometry}
+          material={materials['Group 13']}
+          position={[5.72, 1.17, 2.77]}
+          rotation={[1.55, 0.1, -2.89]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1108.geometry}
+          material={materials['Group 13']}
+          position={[5.78, 1.15, 2.84]}
+          rotation={[1.52, -0.39, -2.99]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1109.geometry}
+          material={materials['Group 13']}
+          position={[5.77, 1.15, 2.84]}
+          rotation={[1.54, -0.13, -2.94]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1110.geometry}
+          material={materials['Group 13']}
+          position={[6.29, 1.14, 3.63]}
+          rotation={[1.63, 0.01, -2.9]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1111.geometry}
+          material={materials['Group 13']}
+          position={[6.31, 1.15, 3.72]}
+          rotation={[1.53, -0.15, -2.93]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1112.geometry}
+          material={materials['Group 13']}
+          position={[6.28, 1.13, 3.52]}
+          rotation={[1.51, 0.09, -2.51]}
+          scale={0.13}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1113.geometry}
+          material={materials['Group 13']}
+          position={[6.26, 1.14, 3.63]}
+          rotation={[1.63, 0.01, -2.9]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1114.geometry}
+          material={materials['Group 13']}
+          position={[6.3, 1.14, 3.57]}
+          rotation={[1.59, -0.15, -2.55]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1115.geometry}
+          material={materials['Group 13']}
+          position={[6.24, 1.14, 3.58]}
+          rotation={[1.63, 0.09, 2.58]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1116.geometry}
+          material={materials['Group 13']}
+          position={[6.31, 1.15, 3.64]}
+          rotation={[1.62, 0.03, -2.53]}
+          scale={0.24}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1117.geometry}
+          material={materials['Group 13']}
+          position={[6.35, 1.15, 3.61]}
+          rotation={[1.59, -0.15, -2.55]}
+          scale={0.2}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1118.geometry}
+          material={materials['Group 13']}
+          position={[6.33, 1.15, 3.55]}
+          rotation={[1.55, 0.1, -2.89]}
+          scale={0.21}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1119.geometry}
+          material={materials['Group 13']}
+          position={[6.39, 1.13, 3.62]}
+          rotation={[1.52, -0.39, -2.99]}
+          scale={0.1}
+        />
+        <mesh
+          geometry={nodes.leaf_9_1120.geometry}
+          material={materials['Group 13']}
+          position={[6.38, 1.13, 3.62]}
+          rotation={[1.54, -0.13, -2.94]}
+          scale={0.1}
+        />
+        <Grass
+          geometry={nodes.leaf_2_2.geometry}
+          material={getMaterial('leaf_2_2')}
+          position={[-0.41, 2.06, 2.32]}
+          rotation={[1.26, 0.07, -1.77]}
+          scale={3.39}
+          quality={6}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_3_2.geometry}
+          material={getMaterial('leaf_3_2')}
+          position={[2.1, 2.5, 4.67]}
+          rotation={[1.51, -0.01, -2.07]}
+          scale={3.62}
+          quality={6}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_3_3.geometry}
+          material={getMaterial('leaf_3_3')}
+          position={[-0.34, 2.23, 3]}
+          rotation={[1.6, 0.11, -1.89]}
+          scale={3.08}
+          quality={6}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_4_1.geometry}
+          material={getMaterial('leaf_4_1')}
+          position={[5.86, 1.4, 2.81]}
+          rotation={[1.47, 0.04, -1.88]}
+          scale={0.53}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_4_2.geometry}
+          material={getMaterial('leaf_4_2')}
+          position={[6.19, 1.41, 3.59]}
+          rotation={[1.64, -0.02, -2.06]}
+          scale={0.64}
+          quality={3}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_4_5.geometry}
+          material={getMaterial('leaf_4_5')}
+          position={[4.69, 1.37, 4.31]}
+          rotation={[1.5, -0.25, -2.38]}
+          scale={0.64}
+          quality={3}
+          resistance={1.5}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_4_6.geometry}
+          material={getMaterial('leaf_4_6')}
+          position={[5.64, 1.45, 3.05]}
+          rotation={[Math.PI / 2, 0, -2.06]}
+          scale={0.64}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_4_7.geometry}
+          material={getMaterial('leaf_4_7')}
+          position={[6.03, 1.38, 2.97]}
+          rotation={[1.41, 0.06, -2.02]}
+          scale={0.52}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_5_1.geometry}
+          material={getMaterial('leaf_5_1')}
+          position={[-0.97, 1, 1.47]}
+          rotation={[1.67, -0.01, -1.92]}
+          scale={1.17}
+          quality={3}
+          resistance={1.5}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_5_2.geometry}
+          material={getMaterial('leaf_5_2')}
+          position={[2.58, 1.26, 3.36]}
+          rotation={[1.31, 0.08, -1.84]}
+          scale={0.92}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_5_3.geometry}
+          material={getMaterial('leaf_5_3')}
+          position={[-0.87, 0.9, 1.21]}
+          rotation={[1.41, 0.05, -1.89]}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_5_4.geometry}
+          material={getMaterial('leaf_5_4')}
+          position={[-0.62, 0.74, 1.44]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.67}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_6_1.geometry}
+          material={getMaterial('leaf_6_1')}
+          position={[0.45, 1.03, 1.91]}
+          rotation={[1.56, -0.08, -1.93]}
+          scale={0.91}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_6_2.geometry}
+          material={getMaterial('leaf_6_2')}
+          position={[-0.03, 0.9, 2.02]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.79}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_6_3.geometry}
+          material={getMaterial('leaf_6_3')}
+          position={[0.04, 0.93, 1.74]}
+          rotation={[1.58, 0.08, -1.88]}
+          scale={0.86}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_7_1.geometry}
+          material={getMaterial('leaf_7_1')}
+          position={[-3.73, 0.27, -4.8]}
+          rotation={[1.5, 0.12, -1.74]}
+          scale={0.2}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_7_2.geometry}
+          material={getMaterial('leaf_7_2')}
+          position={[-3.72, 0.27, -4.8]}
+          rotation={[1.5, 0.03, -1.75]}
+          scale={0.2}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_7_3.geometry}
+          material={getMaterial('leaf_7_3')}
+          position={[-3.69, 0.28, -4.75]}
+          rotation={[1.48, -0.04, -1.75]}
+          scale={0.2}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_1.geometry}
+          material={getMaterial('leaf_8_1')}
+          position={[6.25, 1.27, 3.41]}
+          rotation={[1.82, -0.1, -2]}
+          scale={0.34}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_1001.geometry}
+          material={getMaterial('leaf_8_1')}
+          position={[3.74, 1.14, 3.39]}
+          rotation={[1.93, 0.06, -1.88]}
+          scale={0.34}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_2.geometry}
+          material={getMaterial('leaf_8_2')}
+          position={[-5.64, 0.41, -0.55]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.58}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_2001.geometry}
+          material={getMaterial('leaf_8_2')}
+          position={[-3.78, 0.48, -3.96]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.58}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_2002.geometry}
+          material={getMaterial('leaf_8_2')}
+          position={[-0.33, 0.74, 2.35]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.58}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_3.geometry}
+          material={getMaterial('leaf_8_3')}
+          position={[5.92, 1.3, 2.68]}
+          rotation={[1.34, 0.14, -1.78]}
+          scale={0.34}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_3001.geometry}
+          material={getMaterial('leaf_8_3')}
+          position={[-5.47, 0.36, -0.99]}
+          rotation={[1.34, 0.14, -1.78]}
+          scale={0.45}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_3002.geometry}
+          material={getMaterial('leaf_8_3')}
+          position={[-3.52, 0.39, -4.46]}
+          rotation={[1.34, 0.14, -1.78]}
+          scale={0.45}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_3003.geometry}
+          material={getMaterial('leaf_8_3')}
+          position={[2.36, 0.99, 2.38]}
+          rotation={[1.34, 0.14, -1.78]}
+          scale={0.45}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_3004.geometry}
+          material={getMaterial('leaf_8_3')}
+          position={[3.78, 1.08, 3.34]}
+          rotation={[1.1, 0.21, -1.7]}
+          scale={0.29}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_4.geometry}
+          material={getMaterial('leaf_8_4')}
+          position={[5.8, 1.3, 3.7]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.34}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_4001.geometry}
+          material={getMaterial('leaf_8_4')}
+          position={[-5.32, 0.37, -0.74]}
+          rotation={[1.6, 0.01, -1.89]}
+          scale={0.43}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_4002.geometry}
+          material={getMaterial('leaf_8_4')}
+          position={[-3.21, 0.41, -4.26]}
+          rotation={[1.6, 0.01, -1.89]}
+          scale={0.43}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_4003.geometry}
+          material={getMaterial('leaf_8_4')}
+          position={[1.01, 0.83, 2.09]}
+          rotation={[1.38, -0.17, -2]}
+          scale={0.43}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_4004.geometry}
+          material={getMaterial('leaf_8_4')}
+          position={[2.85, 1.06, 3.32]}
+          rotation={[1.43, 0.07, -1.87]}
+          scale={0.34}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_5.geometry}
+          material={getMaterial('leaf_8_5')}
+          position={[-4.8, 0.54, -0.04]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.58}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_5001.geometry}
+          material={getMaterial('leaf_8_5')}
+          position={[-4.1, 0.46, -4.98]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.58}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_5002.geometry}
+          material={getMaterial('leaf_8_5')}
+          position={[0.42, 0.8, 1.14]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.58}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_6.geometry}
+          material={getMaterial('leaf_8_6')}
+          position={[-4.92, 0.51, 0.18]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.58}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_6001.geometry}
+          material={getMaterial('leaf_8_6')}
+          position={[-4.19, 0.47, -4.64]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.58}
+          quality={3}
+          resistance={1}
+          perlin={perlin}
+        />
+        <Grass
+          geometry={nodes.leaf_8_6002.geometry}
+          material={getMaterial('leaf_8_6')}
+          position={[0.32, 0.8, 1.36]}
+          rotation={[Math.PI / 2, 0, -1.91]}
+          scale={0.58}
+          quality={3}
+          resistance={2}
+          perlin={perlin}
+        />
+      </group>
       {/* Terrain */}
-      <mesh geometry={nodes.Plane004.geometry} material={materials['Material.010']} />
-      <mesh geometry={nodes.terrain_1.geometry} material={materials['Material.003']} position={[15, 0, 0]} />
+      <mesh
+        geometry={nodes.Plane004.geometry}
+        material={materials['Material.010']}
+      />
+      <mesh
+        geometry={nodes.terrain_1.geometry}
+        material={materials['Material.003']}
+        position={[15, 0, 0]}
+      />
       <group position={[0, 0, -14.78]}>
-        <mesh geometry={nodes.Plane009.geometry} material={materials['Material.003']} />
+        <mesh
+          geometry={nodes.Plane009.geometry}
+          material={materials['Material.003']}
+        />
         <mesh geometry={nodes.Plane009_1.geometry} material={materials.land} />
       </group>
-      <mesh geometry={nodes.terrain_3.geometry} material={materials['Material.003']} position={[8.5, -4.15, -8.5]} />
-      <mesh geometry={nodes.stone018.geometry} material={materials['Material.003']} position={[1.25, 1.09, 3.37]} />
-      <mesh geometry={nodes.stone011.geometry} material={materials['Material.003']} position={[-0.95, 0.6, 2.16]} rotation={[-0.81, 0.31, 2.18]} scale={0.6} />
-      <mesh geometry={nodes.stone010.geometry} material={materials['Material.003']} position={[0.7, 0.53, 1.4]} rotation={[0.27, 0.84, 0.25]} scale={0.25} />
-      <mesh geometry={nodes.stone009.geometry} material={materials['Material.003']} position={[-3.68, 0.26, -4.02]} rotation={[-1.63, 0.11, 2.14]} scale={0.1} />
-      <mesh geometry={nodes.stone008.geometry} material={materials['Material.003']} position={[-3.25, 0.23, -4.36]} rotation={[-1.02, 0.17, 0.31]} scale={0.06} />
-      <mesh geometry={nodes.stone007.geometry} material={materials['Material.003']} position={[-3.13, 0.22, -4.3]} rotation={[2.61, 0.21, 2.49]} scale={0.04} />
-      <mesh geometry={nodes.stone006.geometry} material={materials['Material.003']} position={[-5.23, 0.17, -0.36]} rotation={[-3.13, -0.02, -3.11]} scale={0.38} />
-      <mesh geometry={nodes.stone003.geometry} material={materials['Material.003']} position={[-4.02, 0.2, -4.94]} rotation={[-0.93, 0.42, -0.84]} scale={0.06} />
-      <mesh geometry={nodes.stone.geometry} material={materials['Material.003']} position={[0.11, 0.41, 1.11]} rotation={[0.11, 1.08, 0.48]} scale={0.08} />
-      <mesh geometry={nodes.stone017.geometry} material={materials['Material.003']} position={[2.08, 0.97, 4.61]} rotation={[-0.02, 1.08, 3.12]} scale={0.39} />
-      <mesh geometry={nodes.stone016.geometry} material={materials['Material.003']} position={[2.81, 0.97, 2.77]} rotation={[-0.36, 0.08, 0.88]} scale={0.28} />
-      <mesh geometry={nodes.stone015.geometry} material={materials['Material.003']} position={[-3.9, 0.3, -4.51]} rotation={[-2.72, 0.54, -2.52]} scale={0.25} />
-      <mesh geometry={nodes.stone014.geometry} material={materials['Material.003']} position={[5.96, 1.16, 3.37]} rotation={[-1.51, 0.54, -0.35]} scale={0.34} />
-      <mesh geometry={nodes.stone013.geometry} material={materials['Material.003']} position={[6, 1.17, 2.81]} rotation={[-1.51, 0.54, -0.35]} scale={0.09} />
-      <mesh geometry={nodes.stone012.geometry} material={materials['Material.003']} position={[6.14, 1.13, 2.83]} rotation={[0.38, 0.4, 2.89]} scale={0.05} />
-      <mesh geometry={nodes.stone005.geometry} material={materials['Material.003']} position={[-5.56, 0.14, -0.82]} rotation={[-3.05, -1.1, 0.04]} scale={0.15} />
-      <mesh geometry={nodes.stone004.geometry} material={materials['Material.003']} position={[-5.18, 0.22, 0.34]} rotation={[-2.76, -0.09, -2.23]} scale={0.11} />
-      <mesh geometry={nodes.stone002.geometry} material={materials['Material.003']} position={[6.45, 1.09, 3.63]} rotation={[-1.35, -0.2, 0.02]} scale={0.07} />
-      <mesh geometry={nodes.stone001.geometry} material={materials['Material.003']} position={[5.84, 1.05, 4.24]} rotation={[-1.86, 0.07, -2.63]} scale={0.05} />
+      <mesh
+        geometry={nodes.terrain_3.geometry}
+        material={materials['Material.003']}
+        position={[8.5, -4.15, -8.5]}
+      />
+      <mesh
+        geometry={nodes.stone018.geometry}
+        material={materials['Material.003']}
+        position={[1.25, 1.09, 3.37]}
+      />
+      <mesh
+        geometry={nodes.stone011.geometry}
+        material={materials['Material.003']}
+        position={[-0.95, 0.6, 2.16]}
+        rotation={[-0.81, 0.31, 2.18]}
+        scale={0.6}
+      />
+      <mesh
+        geometry={nodes.stone010.geometry}
+        material={materials['Material.003']}
+        position={[0.7, 0.53, 1.4]}
+        rotation={[0.27, 0.84, 0.25]}
+        scale={0.25}
+      />
+      <mesh
+        geometry={nodes.stone009.geometry}
+        material={materials['Material.003']}
+        position={[-3.68, 0.26, -4.02]}
+        rotation={[-1.63, 0.11, 2.14]}
+        scale={0.1}
+      />
+      <mesh
+        geometry={nodes.stone008.geometry}
+        material={materials['Material.003']}
+        position={[-3.25, 0.23, -4.36]}
+        rotation={[-1.02, 0.17, 0.31]}
+        scale={0.06}
+      />
+      <mesh
+        geometry={nodes.stone007.geometry}
+        material={materials['Material.003']}
+        position={[-3.13, 0.22, -4.3]}
+        rotation={[2.61, 0.21, 2.49]}
+        scale={0.04}
+      />
+      <mesh
+        geometry={nodes.stone006.geometry}
+        material={materials['Material.003']}
+        position={[-5.23, 0.17, -0.36]}
+        rotation={[-3.13, -0.02, -3.11]}
+        scale={0.38}
+      />
+      <mesh
+        geometry={nodes.stone003.geometry}
+        material={materials['Material.003']}
+        position={[-4.02, 0.2, -4.94]}
+        rotation={[-0.93, 0.42, -0.84]}
+        scale={0.06}
+      />
+      <mesh
+        geometry={nodes.stone.geometry}
+        material={materials['Material.003']}
+        position={[0.11, 0.41, 1.11]}
+        rotation={[0.11, 1.08, 0.48]}
+        scale={0.08}
+      />
+      <mesh
+        geometry={nodes.stone017.geometry}
+        material={materials['Material.003']}
+        position={[2.08, 0.97, 4.61]}
+        rotation={[-0.02, 1.08, 3.12]}
+        scale={0.39}
+      />
+      <mesh
+        geometry={nodes.stone016.geometry}
+        material={materials['Material.003']}
+        position={[2.81, 0.97, 2.77]}
+        rotation={[-0.36, 0.08, 0.88]}
+        scale={0.28}
+      />
+      <mesh
+        geometry={nodes.stone015.geometry}
+        material={materials['Material.003']}
+        position={[-3.9, 0.3, -4.51]}
+        rotation={[-2.72, 0.54, -2.52]}
+        scale={0.25}
+      />
+      <mesh
+        geometry={nodes.stone014.geometry}
+        material={materials['Material.003']}
+        position={[5.96, 1.16, 3.37]}
+        rotation={[-1.51, 0.54, -0.35]}
+        scale={0.34}
+      />
+      <mesh
+        geometry={nodes.stone013.geometry}
+        material={materials['Material.003']}
+        position={[6, 1.17, 2.81]}
+        rotation={[-1.51, 0.54, -0.35]}
+        scale={0.09}
+      />
+      <mesh
+        geometry={nodes.stone012.geometry}
+        material={materials['Material.003']}
+        position={[6.14, 1.13, 2.83]}
+        rotation={[0.38, 0.4, 2.89]}
+        scale={0.05}
+      />
+      <mesh
+        geometry={nodes.stone005.geometry}
+        material={materials['Material.003']}
+        position={[-5.56, 0.14, -0.82]}
+        rotation={[-3.05, -1.1, 0.04]}
+        scale={0.15}
+      />
+      <mesh
+        geometry={nodes.stone004.geometry}
+        material={materials['Material.003']}
+        position={[-5.18, 0.22, 0.34]}
+        rotation={[-2.76, -0.09, -2.23]}
+        scale={0.11}
+      />
+      <mesh
+        geometry={nodes.stone002.geometry}
+        material={materials['Material.003']}
+        position={[6.45, 1.09, 3.63]}
+        rotation={[-1.35, -0.2, 0.02]}
+        scale={0.07}
+      />
+      <mesh
+        geometry={nodes.stone001.geometry}
+        material={materials['Material.003']}
+        position={[5.84, 1.05, 4.24]}
+        rotation={[-1.86, 0.07, -2.63]}
+        scale={0.05}
+      />
       {/* Lighthouse */}
       <group>
-        <group position={[4.03, 1.7, 4.05]} rotation={[0, -0.21, 0]} scale={[1.37, 2.03, 1.37]}>
-          <mesh geometry={nodes.Cylinder001_1.geometry} material={materials['Material.005']} />
-          <mesh geometry={nodes.Cylinder001_2.geometry} material={materials['Material.006']} />
-          <mesh geometry={nodes.Cylinder001_3.geometry} material={materials['Material.007']} />
-          <mesh geometry={nodes.Cylinder001_4.geometry} material={materials['Material.008']} />
+        <group
+          position={[4.03, 1.7, 4.05]}
+          rotation={[0, -0.21, 0]}
+          scale={[1.37, 2.03, 1.37]}
+        >
+          <mesh
+            geometry={nodes.Cylinder001_1.geometry}
+            material={materials['Material.005']}
+          />
+          <mesh
+            geometry={nodes.Cylinder001_2.geometry}
+            material={materials['Material.006']}
+          />
+          <mesh
+            geometry={nodes.Cylinder001_3.geometry}
+            material={materials['Material.007']}
+          />
+          <mesh
+            geometry={nodes.Cylinder001_4.geometry}
+            material={materials['Material.008']}
+          />
         </group>
-        <mesh geometry={nodes.Cube.geometry} material={materials['Material.006']} position={[3.13, 1.39, 3.93]} rotation={[0, -0.21, 0]} scale={0.45} />
-        <mesh geometry={nodes.Cylinder002.geometry} material={materials['Material.005']} position={[4.03, 0.93, 4.05]} rotation={[0, -0.21, 0]} scale={[1.37, 2.03, 1.37]} />
-        <mesh geometry={nodes.Cylinder001.geometry} material={materials['Material.007']} position={[4.03, 1.41, 4.05]} rotation={[0, -0.21, 0]} scale={[1.48, 2.03, 1.48]} />
-        <mesh geometry={nodes.Cube001.geometry} material={materials['Material.007']} position={[3.07, 1.86, 3.92]} rotation={[0, -0.21, 0]} scale={[0.56, 0.49, 0.56]} />
-        <group position={[4.15, 1.27, 3.47]} rotation={[0, -0.21, 0]} scale={[0.17, 0.27, 0.05]}>
-          <mesh geometry={nodes.Cube002_1.geometry} material={materials['Material.007']} />
-          <mesh geometry={nodes.Cube002_2.geometry} material={materials['Material.009']} />
+        <mesh
+          geometry={nodes.Cube.geometry}
+          material={materials['Material.006']}
+          position={[3.13, 1.39, 3.93]}
+          rotation={[0, -0.21, 0]}
+          scale={0.45}
+        />
+        <mesh
+          geometry={nodes.Cylinder002.geometry}
+          material={materials['Material.005']}
+          position={[4.03, 0.93, 4.05]}
+          rotation={[0, -0.21, 0]}
+          scale={[1.37, 2.03, 1.37]}
+        />
+        <mesh
+          geometry={nodes.Cylinder001.geometry}
+          material={materials['Material.007']}
+          position={[4.03, 1.41, 4.05]}
+          rotation={[0, -0.21, 0]}
+          scale={[1.48, 2.03, 1.48]}
+        />
+        <mesh
+          geometry={nodes.Cube001.geometry}
+          material={materials['Material.007']}
+          position={[3.07, 1.86, 3.92]}
+          rotation={[0, -0.21, 0]}
+          scale={[0.56, 0.49, 0.56]}
+        />
+        <group
+          position={[4.15, 1.27, 3.47]}
+          rotation={[0, -0.21, 0]}
+          scale={[0.17, 0.27, 0.05]}
+        >
+          <mesh
+            geometry={nodes.Cube002_1.geometry}
+            material={materials['Material.007']}
+          />
+          <mesh
+            geometry={nodes.Cube002_2.geometry}
+            material={materials['Material.009']}
+          />
         </group>
-        <group position={[3.18, 1.4, 3.48]} rotation={[0, -0.21, 0]} scale={[0.17, 0.12, 0.03]}>
-          <mesh geometry={nodes.Cube003_1.geometry} material={materials['Material.007']} />
-          <mesh geometry={nodes.Cube003_2.geometry} material={materials['Material.016']} />
+        <group
+          position={[3.18, 1.4, 3.48]}
+          rotation={[0, -0.21, 0]}
+          scale={[0.17, 0.12, 0.03]}
+        >
+          <mesh
+            geometry={nodes.Cube003_1.geometry}
+            material={materials['Material.007']}
+          />
+          <mesh
+            geometry={nodes.Cube003_2.geometry}
+            material={materials['Material.016']}
+          />
         </group>
       </group>
       {/* Dock */}
       <group>
-        <mesh geometry={nodes.Plane002.geometry} material={materials['Material.009']} position={[-0.94, 0.22, -3.22]} rotation={[0, -0.54, 0]} scale={[0.25, 0.25, 1.65]} />
-        <mesh geometry={nodes.Plane003.geometry} material={materials['Material.009']} position={[1.68, 0.22, -3.25]} rotation={[0, 1.03, 0]} scale={[0.25, 0.25, 1.65]} />
-        <mesh geometry={nodes.Cylinder003.geometry} material={materials['Material.009']} position={[0.8, 0.25, -5.55]} rotation={[0, 0.51, 0]} scale={0.04} />
-        <mesh geometry={nodes.Cylinder004.geometry} material={materials['Material.009']} position={[0.32, 0.25, -5.86]} rotation={[0, 0.51, 0]} scale={0.04} />
-        <mesh geometry={nodes.Cylinder005.geometry} material={materials['Material.009']} position={[0.31, 0.25, -4.73]} rotation={[0, 0.51, 0]} scale={0.04} />
-        <mesh geometry={nodes.Cylinder006.geometry} material={materials['Material.009']} position={[-0.17, 0.25, -5.04]} rotation={[0, 0.51, 0]} scale={0.04} />
-        <mesh geometry={nodes.Cylinder007.geometry} material={materials['Material.009']} position={[-0.3, 0.25, -3.73]} rotation={[0, 0.51, 0]} scale={0.04} />
-        <mesh geometry={nodes.Cylinder008.geometry} material={materials['Material.009']} position={[-0.78, 0.25, -4.04]} rotation={[0, 0.51, 0]} scale={0.04} />
-        <mesh geometry={nodes.Cylinder009.geometry} material={materials['Material.009']} position={[1.28, 0.25, -3.83]} rotation={[-Math.PI, 1.06, -Math.PI]} scale={0.04} />
-        <mesh geometry={nodes.Cylinder010.geometry} material={materials['Material.009']} position={[0.97, 0.25, -3.34]} rotation={[-Math.PI, 1.06, -Math.PI]} scale={0.04} />
-        <mesh geometry={nodes.Cylinder011.geometry} material={materials['Material.009']} position={[0.79, 0.25, -4.12]} rotation={[-Math.PI, 1.06, -Math.PI]} scale={0.04} />
-        <mesh geometry={nodes.Cylinder012.geometry} material={materials['Material.009']} position={[0.48, 0.25, -3.64]} rotation={[-Math.PI, 1.06, -Math.PI]} scale={0.04} />
+        <mesh
+          geometry={nodes.Plane002.geometry}
+          material={materials['Material.009']}
+          position={[-0.94, 0.22, -3.22]}
+          rotation={[0, -0.54, 0]}
+          scale={[0.25, 0.25, 1.65]}
+        />
+        <mesh
+          geometry={nodes.Plane003.geometry}
+          material={materials['Material.009']}
+          position={[1.68, 0.22, -3.25]}
+          rotation={[0, 1.03, 0]}
+          scale={[0.25, 0.25, 1.65]}
+        />
+        <mesh
+          geometry={nodes.Cylinder003.geometry}
+          material={materials['Material.009']}
+          position={[0.8, 0.25, -5.55]}
+          rotation={[0, 0.51, 0]}
+          scale={0.04}
+        />
+        <mesh
+          geometry={nodes.Cylinder004.geometry}
+          material={materials['Material.009']}
+          position={[0.32, 0.25, -5.86]}
+          rotation={[0, 0.51, 0]}
+          scale={0.04}
+        />
+        <mesh
+          geometry={nodes.Cylinder005.geometry}
+          material={materials['Material.009']}
+          position={[0.31, 0.25, -4.73]}
+          rotation={[0, 0.51, 0]}
+          scale={0.04}
+        />
+        <mesh
+          geometry={nodes.Cylinder006.geometry}
+          material={materials['Material.009']}
+          position={[-0.17, 0.25, -5.04]}
+          rotation={[0, 0.51, 0]}
+          scale={0.04}
+        />
+        <mesh
+          geometry={nodes.Cylinder007.geometry}
+          material={materials['Material.009']}
+          position={[-0.3, 0.25, -3.73]}
+          rotation={[0, 0.51, 0]}
+          scale={0.04}
+        />
+        <mesh
+          geometry={nodes.Cylinder008.geometry}
+          material={materials['Material.009']}
+          position={[-0.78, 0.25, -4.04]}
+          rotation={[0, 0.51, 0]}
+          scale={0.04}
+        />
+        <mesh
+          geometry={nodes.Cylinder009.geometry}
+          material={materials['Material.009']}
+          position={[1.28, 0.25, -3.83]}
+          rotation={[-Math.PI, 1.06, -Math.PI]}
+          scale={0.04}
+        />
+        <mesh
+          geometry={nodes.Cylinder010.geometry}
+          material={materials['Material.009']}
+          position={[0.97, 0.25, -3.34]}
+          rotation={[-Math.PI, 1.06, -Math.PI]}
+          scale={0.04}
+        />
+        <mesh
+          geometry={nodes.Cylinder011.geometry}
+          material={materials['Material.009']}
+          position={[0.79, 0.25, -4.12]}
+          rotation={[-Math.PI, 1.06, -Math.PI]}
+          scale={0.04}
+        />
+        <mesh
+          geometry={nodes.Cylinder012.geometry}
+          material={materials['Material.009']}
+          position={[0.48, 0.25, -3.64]}
+          rotation={[-Math.PI, 1.06, -Math.PI]}
+          scale={0.04}
+        />
       </group>
       {/* Ship */}
       <group position={[0.97, 0.04, -4.98]}>
@@ -788,20 +1811,77 @@ export function Model(props) {
           <group ref={shipAnchorRef}>
             <group rotation={[0, -0.71, 0]}>
               <group position={[-0.97, -0.04, 4.98]}>
-                <group position={[0.99, 0.2, -5]} rotation={[0, -0.7, 0]} scale={0.16}>
-                  <mesh geometry={nodes.Plane007_1.geometry} material={materials['Material.006']} />
-                  <mesh geometry={nodes.Plane007_2.geometry} material={materials['Material.015']} />
-                  <mesh geometry={nodes.Plane007_3.geometry} material={materials['Material.009']} />
+                <group
+                  position={[0.99, 0.2, -5]}
+                  rotation={[0, -0.7, 0]}
+                  scale={0.16}
+                >
+                  <mesh
+                    geometry={nodes.Plane007_1.geometry}
+                    material={materials['Material.006']}
+                  />
+                  <mesh
+                    geometry={nodes.Plane007_2.geometry}
+                    material={materials['Material.015']}
+                  />
+                  <mesh
+                    geometry={nodes.Plane007_3.geometry}
+                    material={materials['Material.009']}
+                  />
                 </group>
-                <mesh geometry={nodes.Plane006.geometry} material={materials['Material.012']} position={[0.85, 0.18, -4.83]} rotation={[0.01, 0.87, 0]} scale={0.26} />
-                <mesh geometry={nodes.BezierCurve.geometry} material={materials['Material.014']} position={[0.71, 0.18, -4.67]} rotation={[0, -0.14, 0]} />
-                <mesh geometry={nodes.Cylinder013.geometry} material={materials['Material.013']} position={[0.72, 0.22, -4.68]} rotation={[1.57, 0, -0.87]} scale={[0.04, 0.07, 0.04]} />
-                <mesh geometry={nodes.Cylinder014.geometry} material={materials['Material.014']} position={[0.79, 0.44, -4.78]} rotation={[0.21, 0.12, 0.18]} scale={[0.01, 0.35, 0.01]} />
-                <mesh geometry={nodes.Cylinder015.geometry} material={materials['Material.014']} position={[0.68, 0.51, -4.64]} rotation={[0.85, 0.41, 0.71]} scale={[0.01, 0.19, 0.01]} />
-                <mesh geometry={nodes.Plane005.geometry} material={materials['Material.009']} position={[0.85, 0.18, -4.83]} rotation={[0.01, 0.87, 0]} scale={0.26} />
-                <group position={[1.4, 0.23, -5.11]} rotation={[-0.21, -0.19, -1.75]}>
-                  <mesh geometry={nodes.Torus_1.geometry} material={materials['Material.006']} />
-                  <mesh geometry={nodes.Torus_2.geometry} material={materials['Material.005']} />
+                <mesh
+                  geometry={nodes.Plane006.geometry}
+                  material={materials['Material.012']}
+                  position={[0.85, 0.18, -4.83]}
+                  rotation={[0.01, 0.87, 0]}
+                  scale={0.26}
+                />
+                <mesh
+                  geometry={nodes.BezierCurve.geometry}
+                  material={materials['Material.014']}
+                  position={[0.71, 0.18, -4.67]}
+                  rotation={[0, -0.14, 0]}
+                />
+                <mesh
+                  geometry={nodes.Cylinder013.geometry}
+                  material={materials['Material.013']}
+                  position={[0.72, 0.22, -4.68]}
+                  rotation={[1.57, 0, -0.87]}
+                  scale={[0.04, 0.07, 0.04]}
+                />
+                <mesh
+                  geometry={nodes.Cylinder014.geometry}
+                  material={materials['Material.014']}
+                  position={[0.79, 0.44, -4.78]}
+                  rotation={[0.21, 0.12, 0.18]}
+                  scale={[0.01, 0.35, 0.01]}
+                />
+                <mesh
+                  geometry={nodes.Cylinder015.geometry}
+                  material={materials['Material.014']}
+                  position={[0.68, 0.51, -4.64]}
+                  rotation={[0.85, 0.41, 0.71]}
+                  scale={[0.01, 0.19, 0.01]}
+                />
+                <mesh
+                  geometry={nodes.Plane005.geometry}
+                  material={materials['Material.009']}
+                  position={[0.85, 0.18, -4.83]}
+                  rotation={[0.01, 0.87, 0]}
+                  scale={0.26}
+                />
+                <group
+                  position={[1.4, 0.23, -5.11]}
+                  rotation={[-0.21, -0.19, -1.75]}
+                >
+                  <mesh
+                    geometry={nodes.Torus_1.geometry}
+                    material={materials['Material.006']}
+                  />
+                  <mesh
+                    geometry={nodes.Torus_2.geometry}
+                    material={materials['Material.005']}
+                  />
                 </group>
               </group>
             </group>
