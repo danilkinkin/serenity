@@ -1,3 +1,5 @@
+#include <fog_pars_vertex>
+
 varying vec2 vUv;
 uniform float uTime;
 uniform sampler2D map;
@@ -58,6 +60,11 @@ void main() {
   pos.z += (snoiseWater(noisePos) * 0.8 + snoiseFoam(noisePos) * 0.2) * noiseAmp;
 
   vUv.y = snoiseWater(noisePos) * 0.7 + snoiseFoam(noisePos) * 0.3;//pos.z;
+
+
+  #include <begin_vertex>
+  #include <project_vertex>
+  #include <fog_vertex>
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.);
 }

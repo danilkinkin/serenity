@@ -128,11 +128,12 @@ export function Model(props) {
     };
 
     var waterMaterial = new ShaderMaterial({
-      uniforms: uniforms,
+      uniforms: UniformsUtils.merge([UniformsLib["fog"], uniforms]),
       vertexShader: waterVertexShader,
       fragmentShader: waterFragmentShader,
       transparent: true,
       //wireframe: true,
+      fog: true,
     });
 
     console.log('supportsDepthTextureExtension:', supportsDepthTextureExtension)

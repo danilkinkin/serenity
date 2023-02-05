@@ -1,4 +1,5 @@
 #include <packing>
+#include <fog_pars_fragment>
 #define PI 3.1415926
 
 varying vec2 vUv;
@@ -30,4 +31,7 @@ void main() {
   vec4 deepBlue  = vec4(0.0, 0.0, 0.5, 1.0);
 
   gl_FragColor = mix(mix(deepBlue, blue, uv.y + 1.0), foam, uv.y);//texture2D( map, uv );
+
+
+  #include <fog_fragment>
 }
