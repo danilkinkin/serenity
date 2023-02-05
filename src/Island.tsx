@@ -6,20 +6,12 @@ Command: npx gltfjsx@6.1.4 embient.glb --transform
 import React, { useEffect, useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Color, DepthTexture, Group, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshPhysicalMaterial, MeshStandardMaterial, NearestFilter, NoBlending, RepeatWrapping, RGBADepthPacking, ShaderMaterial, TextureLoader, UniformsLib, UniformsUtils, UnsignedShortType, Vector2, WebGLRenderTarget, RGBAFormat, CanvasTexture } from 'three'
+import { Color, DepthTexture, Group, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshPhysicalMaterial, MeshStandardMaterial, NearestFilter, NoBlending, RepeatWrapping, RGBADepthPacking, ShaderMaterial, TextureLoader, UniformsLib, UniformsUtils, UnsignedShortType, Vector2, WebGLRenderTarget, RGBAFormat, CanvasTexture, Texture, DataTexture } from 'three'
 import { Grass, useWindStore } from './App'
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { useSpring } from '@react-spring/three'
 import waterFragmentShader from '@src/assests/water.fragmentShader.glsl?raw';
 import waterVertexShader from '@src/assests/water.vertexShader.glsl?raw';
-
-function lerp(p1,p2,t=0.5) {
-  return {
-    x: p1.x + (p2.x - p1.x) * t,
-    y: p1.y + (p2.y - p1.y) * t,
-  }
-}
-
 
 export function Model(props) {
   const { nodes, materials } = useGLTF('/objects/island.glb')
@@ -28,17 +20,19 @@ export function Model(props) {
   const [perlin] = useState(() => new ImprovedNoise())
   const composerRef = useRef();
   const { camera, gl, size, scene } = useThree()
-  const renderTarget = new WebGLRenderTarget(size.width, size.height);
-  renderTarget.texture.format = RGBAFormat;
-  renderTarget.texture.generateMipmaps = false;
-  renderTarget.stencilBuffer = false;
-  renderTarget.depthBuffer = true;
-  renderTarget.depthTexture = new DepthTexture();
-  renderTarget.depthTexture.type = UnsignedShortType;
+  console.log('size:', size)
 
-  var supportsDepthTextureExtension = !!gl.extensions.get(
-    "WEBGL_depth_texture"
-  );
+  const [{ renderTarget }] = useState(() => {
+    const renderTarget = new WebGLRenderTarget(100, 100);
+    renderTarget.texture.format = RGBAFormat;
+    renderTarget.texture.generateMipmaps = false;
+    renderTarget.stencilBuffer = false;
+    renderTarget.depthBuffer = true;
+    renderTarget.depthTexture = new DepthTexture(10, 10);
+    renderTarget.depthTexture.type = UnsignedShortType;
+
+    return { renderTarget };
+  });
 
   const windStore = useWindStore()
   const springsMove = useSpring({
@@ -136,24 +130,10 @@ export function Model(props) {
       fog: true,
     });
 
-    console.log('supportsDepthTextureExtension:', supportsDepthTextureExtension)
-
-    waterMaterial.uniforms.camera_near.value = camera.near;
-    waterMaterial.uniforms.camera_far.value = camera.far;
-    waterMaterial.uniforms.resolution.value.set(
-      window.innerWidth * gl.pixelRatio,
-      window.innerHeight * gl.pixelRatio
-    );
-    waterMaterial.uniforms.map.value = dudvMap;
-    /* waterMaterial.uniforms.depth_map.value =
-      supportsDepthTextureExtension === true
-        ? renderTarget.depthTexture
-        : renderTarget.texture;  */
-
-    
     waterMaterial.uniforms.color_foam.value.set(0xffffff);
     waterMaterial.uniforms.color_shallow.value.set(0x14c6a5);
     waterMaterial.uniforms.color_deep.value.set(0x000000);
+    waterMaterial.uniforms.depth_map.value = renderTarget.depthTexture;
 
     const depthMaterial = new MeshBasicMaterial({
       colorWrite: false
@@ -163,7 +143,20 @@ export function Model(props) {
   })
 
 
-  useFrame((state) => {
+  function powerOfTwo(x) {
+    return Math.pow(2, Math.floor(Math.log(x)/Math.log(2)));
+  }
+
+  useFrame(({ gl, clock }) => {
+    waterMaterial.uniforms.camera_near.value = camera.near;
+    waterMaterial.uniforms.camera_far.value = camera.far;    
+    waterMaterial.uniforms.uTime.value = clock.elapsedTime;
+
+    const temp = new Vector2();
+
+    gl.getDrawingBufferSize(temp);
+    waterMaterial.uniforms.resolution.value = temp;
+    renderTarget.setSize( powerOfTwo(temp.x), powerOfTwo(temp.y) );
 
     waterMeshRef.current.visible = false;
     gl.setRenderTarget(renderTarget);
@@ -174,9 +167,7 @@ export function Model(props) {
     gl.setRenderTarget(null);    
     waterMeshRef.current.visible = true;
     scene.overrideMaterial = null;
-
-    waterMaterial.uniforms.uTime.value = state.clock.elapsedTime;
-  })
+  }, -1)
       
   return (
     <group {...props} dispose={null}>
@@ -184,13 +175,10 @@ export function Model(props) {
       <mesh 
         ref={waterMeshRef}
         material={waterMaterial || materials['Material.011']} 
-        position={[1.01, 0.06, -0.67]} 
         rotation={[-Math.PI / 2, 0, 0]}
       >
         <planeGeometry args={[100, 100, 300, 300]} />
       </mesh>
-      {/* Sky */}
-      <mesh geometry={nodes.sky.geometry} material={materials['Material.001']} scale={211.75} />
       {/* Grass */}
       <Grass 
         geometry={nodes.leaf_2_1.geometry} 

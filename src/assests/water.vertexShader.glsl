@@ -1,8 +1,10 @@
 #include <fog_pars_vertex>
 
 varying vec2 vUv;
+varying vec3 viewZ;
 uniform float uTime;
 uniform sampler2D map;
+uniform float repeat;
 
 #define M_PI 3.14159265358979323846
 
@@ -50,7 +52,7 @@ float snoise(vec3 pos) {
   return snoiseFoam(pos) + snoiseWater(pos);
 }
 
-void main() {
+void mainOld() {
   vUv = uv;
 
   vec3 pos = position;
@@ -67,4 +69,18 @@ void main() {
   #include <fog_vertex>
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.);
+}
+
+void main() {
+  float time = uTime * 0.5;
+  vUv = uv;
+  vec3 newPos = position.xyz;
+  //newPos.z += 0.8*sin(time/1.8 + repeat*uv.y) + 0.8 * cos(time/2.0 + repeat*uv.x);
+  viewZ = -(modelViewMatrix * vec4(newPos, 1.)).xyz;
+
+  #include <begin_vertex>
+  #include <project_vertex>
+  #include <fog_vertex>
+  
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
 }

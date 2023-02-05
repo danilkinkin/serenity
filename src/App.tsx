@@ -28,7 +28,7 @@ import { Flow } from 'three/examples/jsm/modifiers/CurveModifier'
 import { useSpring } from '@react-spring/three'
 import { create } from 'zustand'
 import { Model as Island } from './Island'
-import { CameraControls, Environment, Html, PerspectiveCamera } from '@react-three/drei'
+import { CameraControls, Environment, Html, PerspectiveCamera, Stats } from '@react-three/drei'
 // import { EffectComposer, Noise } from '@react-three/postprocessing'
 
 interface WindState {
@@ -369,7 +369,7 @@ function Scene() {
 
   useFrame(() => {
 
-    cameraRef.current?.lookAt(-2, 3, 1)
+    //cameraRef.current?.lookAt(-2, 3, 1)
   })
 
   return (
@@ -382,7 +382,7 @@ function Scene() {
         far={1000} 
         position={[0, 4, 18]} 
       />
-      <CameraControls enabled={false} />
+      <CameraControls enabled />
       <axesHelper args={[5]} position={[-2, 3, 1]} />
       <axesHelper args={[2]} position={[0, 0, 0]} />
       <ambientLight />
@@ -426,12 +426,11 @@ function App() {
     <Canvas>
       <fog attach="fog" args={[new Color(0xaad9ff), 30, 51.5]} />
       <Environment background preset="sunset" blur={0.8} />
-      <Suspense fallback={<Html center>Loading.</Html>}>
         <Scene />
-      </Suspense>
       {/* <EffectComposer>
         <Noise opacity={0.02} />
   </EffectComposer> */}
+      <Stats />
     </Canvas>
   )
 }
