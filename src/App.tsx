@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useControls } from 'leva'
 import { anglToRad } from '@src/utils/angle'
@@ -28,7 +28,8 @@ import { Flow } from 'three/examples/jsm/modifiers/CurveModifier'
 import { useSpring } from '@react-spring/three'
 import { create } from 'zustand'
 import { Model as Island } from './Island'
-import { CameraControls, PerspectiveCamera } from '@react-three/drei'
+import { CameraControls, Environment, Html, PerspectiveCamera } from '@react-three/drei'
+// import { EffectComposer, Noise } from '@react-three/postprocessing'
 
 interface WindState {
   variant: 'calm' | 'force'
@@ -381,7 +382,7 @@ function Scene() {
         far={1000} 
         position={[0, 4, 18]} 
       />
-      {/* <CameraControls enabled={false} /> */}
+      <CameraControls enabled={false} />
       <axesHelper args={[5]} position={[-2, 3, 1]} />
       <axesHelper args={[2]} position={[0, 0, 0]} />
       <ambientLight />
@@ -423,7 +424,14 @@ function App() {
 
   return (
     <Canvas>
-      <Scene />
+      <fog attach="fog" args={[new Color(0xaad9ff), 30, 51.5]} />
+      <Environment background preset="sunset" blur={0.8} />
+      <Suspense fallback={<Html center>Loading.</Html>}>
+        <Scene />
+      </Suspense>
+      {/* <EffectComposer>
+        <Noise opacity={0.02} />
+  </EffectComposer> */}
     </Canvas>
   )
 }
