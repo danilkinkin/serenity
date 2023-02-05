@@ -12,7 +12,6 @@ import {
   Group,
   Mesh,
   MeshBasicMaterial,
-  MeshStandardMaterial,
   RepeatWrapping,
   ShaderMaterial,
   TextureLoader,
@@ -41,7 +40,7 @@ export function Model(props) {
   const shipAnchorRef = useRef<Group>(null)
   const grassGroupRef = useRef<Group>(null)
   const [perlin] = useState(() => new ImprovedNoise())
-  const { camera, gl, size, scene } = useThree()
+  const { camera, gl, scene } = useThree()
 
   const windStore = useWindStore()
   const springsMove = useSpring({
