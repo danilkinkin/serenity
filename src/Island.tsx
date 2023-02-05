@@ -23,12 +23,12 @@ export function Model(props) {
   console.log('size:', size)
 
   const [{ renderTarget }] = useState(() => {
-    const renderTarget = new WebGLRenderTarget(100, 100);
+    const renderTarget = new WebGLRenderTarget(1000, 1000);
     renderTarget.texture.format = RGBAFormat;
     renderTarget.texture.generateMipmaps = false;
     renderTarget.stencilBuffer = false;
     renderTarget.depthBuffer = true;
-    renderTarget.depthTexture = new DepthTexture(10, 10);
+    renderTarget.depthTexture = new DepthTexture(1000, 1000);
     renderTarget.depthTexture.type = UnsignedShortType;
 
     return { renderTarget };
@@ -721,6 +721,12 @@ export function Model(props) {
       />
       {/* Terrain */}
       <mesh geometry={nodes.Plane004.geometry} material={materials['Material.010']} />
+      <mesh geometry={nodes.terrain_1.geometry} material={materials['Material.003']} position={[15, 0, 0]} />
+      <group position={[0, 0, -14.78]}>
+        <mesh geometry={nodes.Plane009.geometry} material={materials['Material.003']} />
+        <mesh geometry={nodes.Plane009_1.geometry} material={materials.land} />
+      </group>
+      <mesh geometry={nodes.terrain_3.geometry} material={materials['Material.003']} position={[8.5, -4.15, -8.5]} />
       <mesh geometry={nodes.stone018.geometry} material={materials['Material.003']} position={[1.25, 1.09, 3.37]} />
       <mesh geometry={nodes.stone011.geometry} material={materials['Material.003']} position={[-0.95, 0.6, 2.16]} rotation={[-0.81, 0.31, 2.18]} scale={0.6} />
       <mesh geometry={nodes.stone010.geometry} material={materials['Material.003']} position={[0.7, 0.53, 1.4]} rotation={[0.27, 0.84, 0.25]} scale={0.25} />
