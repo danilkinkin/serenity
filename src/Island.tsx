@@ -77,8 +77,6 @@ export function Model(props) {
     var dudvMap = textureLoader.load('https://i.imgur.com/hOIsXiZ.png')
     dudvMap.wrapS = dudvMap.wrapT = RepeatWrapping
 
-    console.log('renderer.extensions:', gl.extensions)
-
     var uniforms = {
       resolution: {
         value: new Vector2(),
