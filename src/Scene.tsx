@@ -48,15 +48,15 @@ export function Scene() {
       1
     )
 
-    const move = (noise + (Math.min(springsMove.force.get(), 100) / 100) * 0.9) * springsMove.calm.get() * 0.4
+    const move = (noise + (Math.min(springsMove.force.get(), 100) / 100) * 0.9) * springsMove.calm.get() * 0.2
     const distance = springsMove.force.get()
 
     cameraRef.current?.position.set(
-      -move, 
+      2 - move, 
       4 + 0.05 * Math.sin(state.clock.elapsedTime), 
       18 + distance  / 100,
     )
-    cameraRef.current?.lookAt(-2 - move / 2, 3 + 0.05 * Math.sin(state.clock.elapsedTime - 1), 1)
+    cameraRef.current?.lookAt(0 - move / 2, 3 + 0.05 * Math.sin(state.clock.elapsedTime - 1), 1)
   }, -2)
 
   return (
