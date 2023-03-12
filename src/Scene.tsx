@@ -9,12 +9,6 @@ import { useSpring } from '@react-spring/three'
 import { PerspectiveCamera as PerspectiveCameraType } from 'three'
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { useControls } from 'leva'
-import { Globals } from "@react-spring/shared";
-
-Globals.assign({
-  frameLoop: "always",
-});
-
 
 export function Scene() {
   const cameraRef = useRef<PerspectiveCameraType>(null)
