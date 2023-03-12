@@ -1,5 +1,9 @@
 #include <fog_pars_vertex>
 
+#ifdef GL_ES
+precision mediump float;
+#endif
+
 #define PI 3.14159265359
 
 varying vec2 vUv;
