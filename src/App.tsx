@@ -65,8 +65,7 @@ function App() {
     <Canvas>
       <fog attach="fog" args={[new Color(0xaad9ff), 30, 51.5]} />
       <Environment background preset="sunset" blur={0.8} />
-      <Suspense fallback={<Html>laoding...</Html>}>
-        <Scene />
+      <Suspense fallback={<Html>loading...</Html>}>
       </Suspense>
       <Stats />
     </Canvas>
