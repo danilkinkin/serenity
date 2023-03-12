@@ -39,6 +39,7 @@ export function Model(props) {
   const waterMeshRef = useRef<Mesh>(null)
   const shipAnchorRef = useRef<Group>(null)
   const grassGroupRef = useRef<Group>(null)
+  const commulutiveTimeOffset = useRef<number>(0)
   const [perlin] = useState(() => new ImprovedNoise())
   const { camera, gl, scene } = useThree()
 
@@ -96,6 +97,9 @@ export function Model(props) {
       uTime: {
         value: 0,
       },
+      uWind: {
+        value: 1,
+      },
       color_foam: {
         value: new Color(),
       },
@@ -112,10 +116,10 @@ export function Model(props) {
         value: 1.0,
       },
       opacity_foam: {
-        value: 0.6,
+        value: 0.8,
       },
       repeat: {
-        value: 10,
+        value: 100,
       },
       max_depth: {
         value: 3,
@@ -157,6 +161,9 @@ export function Model(props) {
     const moveFactor = springsMove.speed.get() * springsMove.force.get()
     const angleFactor = springsAngle.speed.get() * springsAngle.force.get()
 
+    commulutiveTimeOffset.current += moveFactor / 100000
+    waterMaterial.uniforms.uWind.value = moveFactor / 300
+
     // waterMeshRef.current.position.y = 0.03 + 0.05 * Math.sin(state.clock.elapsedTime)
     shipAnchorRef.current.position.z = moveFactor / 30000
     shipAnchorRef.current.position.y = 0.05 * Math.sin(state.clock.elapsedTime)
@@ -169,7 +176,7 @@ export function Model(props) {
   useFrame(({ gl, clock }) => {
     waterMaterial.uniforms.camera_near.value = camera.near
     waterMaterial.uniforms.camera_far.value = camera.far
-    waterMaterial.uniforms.uTime.value = clock.elapsedTime
+    waterMaterial.uniforms.uTime.value = clock.elapsedTime + commulutiveTimeOffset.current
 
     const temp = new Vector2()
 
@@ -198,7 +205,7 @@ export function Model(props) {
         material={waterMaterial || materials['Material.011']}
         rotation={[-Math.PI / 2, 0, 0]}
       >
-        <planeGeometry args={[100, 100, 300, 300]} />
+        <planeGeometry args={[100, 100, 600, 600]} />
       </mesh>
       {/* Grass */}
       <group ref={grassGroupRef} renderOrder={1}>

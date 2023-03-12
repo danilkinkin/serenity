@@ -8,11 +8,15 @@ import { useWindStore } from './windState'
 import { useSpring } from '@react-spring/three'
 import { PerspectiveCamera as PerspectiveCameraType } from 'three'
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
+import { useControls } from 'leva'
 
 export function Scene() {
   const cameraRef = useRef<PerspectiveCameraType>(null)
   const [perlin] = useState(() => new ImprovedNoise())
   const currWindShift = useRef<number>(0)
+  const cameraControls = useControls('Camera', {
+    manual: false,
+  })
   const windStore = useWindStore()
   const springsMove = useSpring({
     ...windStore[windStore.variant],
@@ -30,17 +34,12 @@ export function Scene() {
       tension: 800,
     },
   })
-  const springsDisatance = useSpring({
-    ...windStore[windStore.variant],
-    config: {
-      mass: 1,
-      friction: 90,
-      tension: 170,
-    },
-  })
 
   useFrame((state, delta) => {
-    currWindShift.current = currWindShift.current + delta * springsAngle.speed.get()
+    if (cameraControls.manual) return
+
+    currWindShift.current =
+      currWindShift.current + delta * springsAngle.speed.get()
 
     const noise = perlin.noise(
       (-2 + currWindShift.current) / springsAngle.scale.get(),
@@ -48,15 +47,22 @@ export function Scene() {
       1
     )
 
-    const move = (noise + (Math.min(springsMove.force.get(), 100) / 100) * 0.9) * springsMove.calm.get() * 0.2
+    const move =
+      (noise + (Math.min(springsMove.force.get(), 100) / 100) * 0.9) *
+      springsMove.calm.get() *
+      0.2
     const distance = springsMove.force.get()
 
     cameraRef.current?.position.set(
-      2 - move, 
-      4 + 0.05 * Math.sin(state.clock.elapsedTime), 
-      18 + distance  / 100,
+      2 - move,
+      4 + 0.05 * Math.sin(state.clock.elapsedTime),
+      18 + distance / 100
     )
-    cameraRef.current?.lookAt(0 - move / 2, 3 + 0.05 * Math.sin(state.clock.elapsedTime - 1), 1)
+    cameraRef.current?.lookAt(
+      0 - move / 2,
+      3 + 0.05 * Math.sin(state.clock.elapsedTime - 1),
+      1
+    )
   }, -2)
 
   return (
@@ -69,7 +75,7 @@ export function Scene() {
         far={1000}
         position={[0, 4, 18]}
       />
-      {/* <CameraControls enabled /> */}
+      {cameraControls.manual && <CameraControls enabled />}
       <axesHelper args={[5]} position={[-2, 3, 1]} />
       <axesHelper args={[2]} position={[0, 0, 0]} />
       <ambientLight />
