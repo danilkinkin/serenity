@@ -22,6 +22,7 @@ import {
   WebGLRenderTarget,
   RGBAFormat,
   DoubleSide,
+  MeshStandardMaterial,
 } from 'three'
 import { useWindStore } from './windState'
 import { Grass } from './Grass'
@@ -29,6 +30,8 @@ import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { useSpring } from '@react-spring/three'
 import waterFragmentShader from '@src/assests/water.fragmentShader.glsl?raw'
 import waterVertexShader from '@src/assests/water.vertexShader.glsl?raw'
+import waterSimpleFragmentShader from '@src/assests/waterSimple.fragmentShader.glsl?raw'
+import waterSimpleVertexShader from '@src/assests/waterSimple.vertexShader.glsl?raw'
 
 function powerOfTwo(x) {
   return Math.pow(2, Math.floor(Math.log(x) / Math.log(2)))
@@ -37,6 +40,7 @@ function powerOfTwo(x) {
 export function Model(props) {
   const { nodes, materials } = useGLTF('/objects/island.glb')
   const waterMeshRef = useRef<Mesh>(null)
+  const waterFarMeshRef = useRef<Mesh>(null)
   const shipAnchorRef = useRef<Group>(null)
   const grassGroupRef = useRef<Group>(null)
   const commulutiveTimeOffset = useRef<number>(0)
@@ -73,79 +77,95 @@ export function Model(props) {
     return { renderTarget }
   })
 
-  const [{ waterMaterial, depthMaterial }] = useState(() => {
-    const textureLoader = new TextureLoader()
-    var dudvMap = textureLoader.load('https://i.imgur.com/hOIsXiZ.png')
-    dudvMap.wrapS = dudvMap.wrapT = RepeatWrapping
+  const [{ waterMaterial, waterSimpleMaterial, depthMaterial }] = useState(
+    () => {
+      const textureLoader = new TextureLoader()
+      var dudvMap = textureLoader.load('https://i.imgur.com/hOIsXiZ.png')
+      dudvMap.wrapS = dudvMap.wrapT = RepeatWrapping
 
-    var uniforms = {
-      resolution: {
-        value: new Vector2(),
-      },
-      depth_map: {
-        value: null,
-      },
-      map: {
-        value: null,
-      },
-      camera_near: {
-        value: 0,
-      },
-      camera_far: {
-        value: 0,
-      },
-      uTime: {
-        value: 0,
-      },
-      uWind: {
-        value: 1,
-      },
-      color_foam: {
-        value: new Color(),
-      },
-      color_shallow: {
-        value: new Color(),
-      },
-      color_deep: {
-        value: new Color(),
-      },
-      opacity_shallow: {
-        value: 0.2,
-      },
-      opacity_deep: {
-        value: 1.0,
-      },
-      opacity_foam: {
-        value: 0.8,
-      },
-      repeat: {
-        value: 100,
-      },
-      max_depth: {
-        value: 3,
-      },
+      var uniforms = {
+        resolution: {
+          value: new Vector2(),
+        },
+        depth_map: {
+          value: null,
+        },
+        map: {
+          value: null,
+        },
+        camera_near: {
+          value: 0,
+        },
+        camera_far: {
+          value: 0,
+        },
+        uTime: {
+          value: 0,
+        },
+        uWind: {
+          value: 1,
+        },
+        color_foam: {
+          value: new Color(),
+        },
+        color_shallow: {
+          value: new Color(),
+        },
+        color_deep: {
+          value: new Color(),
+        },
+        opacity_shallow: {
+          value: 0.2,
+        },
+        opacity_deep: {
+          value: 1.0,
+        },
+        opacity_foam: {
+          value: 0.8,
+        },
+        repeat: {
+          value: 100,
+        },
+        max_depth: {
+          value: 3,
+        },
+      }
+
+      var waterMaterial = new ShaderMaterial({
+        uniforms: UniformsUtils.merge([UniformsLib['fog'], uniforms]),
+        vertexShader: waterVertexShader,
+        fragmentShader: waterFragmentShader,
+        transparent: true,
+        //wireframe: true,
+        fog: true,
+      })
+
+      waterMaterial.uniforms.color_foam.value.set(0xffffff)
+      waterMaterial.uniforms.color_shallow.value.set(0x14c6a5)
+      waterMaterial.uniforms.color_deep.value.set(0x001680)
+      waterMaterial.uniforms.depth_map.value = renderTarget.depthTexture
+
+      const depthMaterial = new MeshBasicMaterial({
+        colorWrite: false,
+      })
+
+      var waterSimpleMaterial = new ShaderMaterial({
+        uniforms: UniformsUtils.merge([UniformsLib['fog'], uniforms]),
+        vertexShader: waterSimpleVertexShader,
+        fragmentShader: waterSimpleFragmentShader,
+        transparent: true,
+        //wireframe: true,
+        fog: true,
+      })
+
+      waterSimpleMaterial.uniforms.color_foam.value.set(0xffffff)
+      waterSimpleMaterial.uniforms.color_shallow.value.set(0x14c6a5)
+      waterSimpleMaterial.uniforms.color_deep.value.set(0x001680)
+      waterSimpleMaterial.uniforms.depth_map.value = renderTarget.depthTexture
+
+      return { waterMaterial, waterSimpleMaterial, depthMaterial }
     }
-
-    var waterMaterial = new ShaderMaterial({
-      uniforms: UniformsUtils.merge([UniformsLib['fog'], uniforms]),
-      vertexShader: waterVertexShader,
-      fragmentShader: waterFragmentShader,
-      transparent: true,
-      //wireframe: true,
-      fog: true,
-    })
-
-    waterMaterial.uniforms.color_foam.value.set(0xffffff)
-    waterMaterial.uniforms.color_shallow.value.set(0x14c6a5)
-    waterMaterial.uniforms.color_deep.value.set(0x001680)
-    waterMaterial.uniforms.depth_map.value = renderTarget.depthTexture
-
-    const depthMaterial = new MeshBasicMaterial({
-      colorWrite: false,
-    })
-
-    return { waterMaterial, depthMaterial }
-  })
+  )
 
   const getMaterial = (name: string) => {
     materials[name].side = DoubleSide
@@ -176,7 +196,8 @@ export function Model(props) {
   useFrame(({ gl, clock }) => {
     waterMaterial.uniforms.camera_near.value = camera.near
     waterMaterial.uniforms.camera_far.value = camera.far
-    waterMaterial.uniforms.uTime.value = clock.elapsedTime + commulutiveTimeOffset.current
+    waterMaterial.uniforms.uTime.value =
+      clock.elapsedTime + commulutiveTimeOffset.current
 
     const temp = new Vector2()
 
@@ -185,6 +206,7 @@ export function Model(props) {
     renderTarget.setSize(powerOfTwo(temp.x), powerOfTwo(temp.y))
 
     waterMeshRef.current.visible = false
+    waterFarMeshRef.current.visible = false
     grassGroupRef.current.visible = false
     gl.setRenderTarget(renderTarget)
     scene.overrideMaterial = depthMaterial
@@ -193,6 +215,7 @@ export function Model(props) {
 
     gl.setRenderTarget(null)
     waterMeshRef.current.visible = true
+    waterFarMeshRef.current.visible = true
     grassGroupRef.current.visible = true
     scene.overrideMaterial = null
   }, -1)
@@ -206,6 +229,14 @@ export function Model(props) {
         rotation={[-Math.PI / 2, 0, 0]}
       >
         <planeGeometry args={[100, 100, 600, 600]} />
+      </mesh>
+      <mesh
+        ref={waterFarMeshRef}
+        material={waterSimpleMaterial || materials['Material.011']}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -1, 0]}
+      >
+        <circleGeometry args={[600, 8]} />
       </mesh>
       {/* Grass */}
       <group ref={grassGroupRef} renderOrder={1}>

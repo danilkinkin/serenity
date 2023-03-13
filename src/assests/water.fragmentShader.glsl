@@ -86,7 +86,7 @@ void main() {
       transition
     );
 
-    gl_FragColor = depthCol * darkFoam + lightFoam;
+    //gl_FragColor = depthCol * darkFoam + lightFoam;
 
     vec2 st = vUv;
     vec4 color = depthCol * darkFoam + lightFoam;
