@@ -16,6 +16,7 @@
     "@react-three/drei": "^9.57.2",
     "@react-three/fiber": "^8.12.0",
     "@react-three/postprocessing": "^2.7.0",
+    "lamina": "^1.1.23",
     "leva": "^0.9.34",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

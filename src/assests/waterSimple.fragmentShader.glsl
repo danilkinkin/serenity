@@ -38,7 +38,7 @@ void main() {
 
   vec4 depthCol;
 
-  depthCol = 1.5 * col2;
+  depthCol = col2;
 
   gl_FragColor = depthCol * darkFoam + lightFoam;
 

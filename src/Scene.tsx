@@ -2,17 +2,32 @@ import React, { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { anglToRad } from '@src/utils/angle'
 import { Model as Island } from './Island'
-import { CameraControls, PerspectiveCamera } from '@react-three/drei'
+import {
+  CameraControls,
+  Environment,
+  PerspectiveCamera,
+  useHelper,
+} from '@react-three/drei'
 import { WindStreamEffect } from './WindStreamEffect'
 import { useWindStore } from './windState'
 import { useSpring } from '@react-spring/three'
-import { PerspectiveCamera as PerspectiveCameraType } from 'three'
+import {
+  PerspectiveCamera as PerspectiveCameraType,
+  BackSide,
+  PointLight,
+  PointLightHelper,
+  DirectionalLight,
+  DirectionalLightHelper,
+} from 'three'
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { useControls } from 'leva'
+import { LayerMaterial, Depth, Noise, Color } from 'lamina'
 
 export function Scene() {
   const cameraRef = useRef<PerspectiveCameraType>(null)
   const [perlin] = useState(() => new ImprovedNoise())
+  const pointLightRef = useRef<PointLight>()
+  const directionalLightRef = useRef<DirectionalLight>()
   const currWindShift = useRef<number>(0)
   const cameraControls = useControls('Camera', {
     manual: false,
@@ -65,6 +80,9 @@ export function Scene() {
     )
   }, -2)
 
+  // useHelper(pointLightRef, PointLightHelper, 5, 'red')
+  useHelper(directionalLightRef, DirectionalLightHelper, 5, 'red')
+
   return (
     <>
       <PerspectiveCamera
@@ -78,9 +96,24 @@ export function Scene() {
       {cameraControls.manual && <CameraControls enabled />}
       <axesHelper args={[5]} position={[-2, 3, 1]} />
       <axesHelper args={[2]} position={[0, 0, 0]} />
-      <ambientLight />
-      <pointLight position={[10, 10, 10]} />
+      {/* <ambientLight  /> */}
+    <ambientLight />
+    <pointLight position={[10, 10, 10]} />
+      <directionalLight ref={directionalLightRef} position={[0, 0, 0]} />
+      {/*<pointLight ref={pointLightRef} position={[1, 1, 1]} /> */}
+      {/* <Environment background resolution={64}>
+        <mesh scale={1000}>
+          <sphereGeometry args={[1, 64, 64]} />
+          <LayerMaterial side={BackSide}>
+            <Color color="#E4F5FF" alpha={1} mode="normal" />
+          </LayerMaterial>
+        </mesh>
+          </Environment> */}
       {/* <Field /> */}
+      <mesh>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="hotpink" />
+      </mesh>
       <Island rotation={[0, anglToRad(-110), 0]} />
       <WindStreamEffect />
     </>

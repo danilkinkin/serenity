@@ -2,12 +2,13 @@ import React, { Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { useControls } from 'leva'
 import { randomize } from '@src/utils/randomize'
-import { Color } from 'three'
+import { Color, BackSide } from 'three'
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { Environment, Html, Stats } from '@react-three/drei'
 import { Scene } from './Scene'
 import { Grass } from './Grass'
 import { useWindStore } from './windState'
+import { LayerMaterial, Depth, Noise } from 'lamina'
 
 function Field() {
   const { density, size, randomizeShift } = useControls('Field', {
@@ -62,10 +63,10 @@ function App() {
   }, [])
 
   return (
-    <Canvas>
-      <fog attach="fog" args={[new Color(0xaad9ff), 30, 51.5]} />
-      <Environment background preset="sunset" blur={0.8} />
+    <Canvas dpr={[1, 2]}>
+      {/* <fog attach="fog" args={[new Color(0xaad9ff), 30, 650]} /> */}
       <Suspense fallback={<Html>loading...</Html>}>
+        <Scene />
       </Suspense>
       <Stats />
     </Canvas>

@@ -23,6 +23,8 @@ import {
   RGBAFormat,
   DoubleSide,
   MeshStandardMaterial,
+  Vector3,
+  ShaderLib,
 } from 'three'
 import { useWindStore } from './windState'
 import { Grass } from './Grass'
@@ -84,11 +86,12 @@ export function Model(props) {
       dudvMap.wrapS = dudvMap.wrapT = RepeatWrapping
 
       var uniforms = {
+        ...ShaderLib['standard'].uniforms,
         resolution: {
           value: new Vector2(),
         },
         depth_map: {
-          value: null,
+          value: renderTarget.depthTexture,
         },
         map: {
           value: null,
@@ -106,13 +109,13 @@ export function Model(props) {
           value: 1,
         },
         color_foam: {
-          value: new Color(),
+          value: new Color(0xffffff),
         },
         color_shallow: {
-          value: new Color(),
+          value: new Color(0x14c6a5),
         },
         color_deep: {
-          value: new Color(),
+          value: new Color(0x49B2B0),
         },
         opacity_shallow: {
           value: 0.2,
@@ -127,23 +130,23 @@ export function Model(props) {
           value: 100,
         },
         max_depth: {
-          value: 3,
+          value: 4,
         },
       }
 
       var waterMaterial = new ShaderMaterial({
-        uniforms: UniformsUtils.merge([UniformsLib['fog'], uniforms]),
+        uniforms: UniformsUtils.merge([UniformsLib['fog'], UniformsLib['lights'], uniforms]),
         vertexShader: waterVertexShader,
         fragmentShader: waterFragmentShader,
         transparent: true,
         //wireframe: true,
         fog: true,
+        lights:true,
       })
 
-      waterMaterial.uniforms.color_foam.value.set(0xffffff)
-      waterMaterial.uniforms.color_shallow.value.set(0x14c6a5)
-      waterMaterial.uniforms.color_deep.value.set(0x001680)
-      waterMaterial.uniforms.depth_map.value = renderTarget.depthTexture
+      waterMaterial.uniforms.diffuse.value = new Color(0x00ffff);
+      waterMaterial.uniforms.roughness.value = 1;
+      waterMaterial.uniforms.metalness.value = 1;
 
       const depthMaterial = new MeshBasicMaterial({
         colorWrite: false,
@@ -157,11 +160,6 @@ export function Model(props) {
         //wireframe: true,
         fog: true,
       })
-
-      waterSimpleMaterial.uniforms.color_foam.value.set(0xffffff)
-      waterSimpleMaterial.uniforms.color_shallow.value.set(0x14c6a5)
-      waterSimpleMaterial.uniforms.color_deep.value.set(0x001680)
-      waterSimpleMaterial.uniforms.depth_map.value = renderTarget.depthTexture
 
       return { waterMaterial, waterSimpleMaterial, depthMaterial }
     }
@@ -215,7 +213,7 @@ export function Model(props) {
 
     gl.setRenderTarget(null)
     waterMeshRef.current.visible = true
-    waterFarMeshRef.current.visible = true
+    //waterFarMeshRef.current.visible = true
     grassGroupRef.current.visible = true
     scene.overrideMaterial = null
   }, -1)
