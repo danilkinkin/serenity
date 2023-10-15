@@ -21,7 +21,7 @@ import {
 } from 'three'
 import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { useControls } from 'leva'
-import { LayerMaterial, Depth, Noise, Color } from 'lamina'
+import { Color } from 'three';
 
 export function Scene() {
   const cameraRef = useRef<PerspectiveCameraType>(null)
@@ -80,8 +80,10 @@ export function Scene() {
     )
   }, -2)
 
-  // useHelper(pointLightRef, PointLightHelper, 5, 'red')
+  useHelper(pointLightRef, PointLightHelper, 5, 'red')
   useHelper(directionalLightRef, DirectionalLightHelper, 5, 'red')
+
+  const bgColor = new Color(0xffecca);
 
   return (
     <>
@@ -96,10 +98,14 @@ export function Scene() {
       {cameraControls.manual && <CameraControls enabled />}
       <axesHelper args={[5]} position={[-2, 3, 1]} />
       <axesHelper args={[2]} position={[0, 0, 0]} />
-      {/* <ambientLight  /> */}
-    <ambientLight />
-    <pointLight position={[10, 10, 10]} />
-      <directionalLight ref={directionalLightRef} position={[0, 0, 0]} />
+      <color
+        attach="background"
+        args={[bgColor.r, bgColor.g, bgColor.b]}
+      />
+      <ambientLight color="#FFFCDB" intensity={1}  />
+    {/* <ambientLight /> */}
+    {/* <pointLight position={[10, 10, 10]} /> */}
+    {/* <directionalLight ref={directionalLightRef} position={[0, 0, 0]} /> */}
       {/*<pointLight ref={pointLightRef} position={[1, 1, 1]} /> */}
       {/* <Environment background resolution={64}>
         <mesh scale={1000}>
@@ -110,10 +116,6 @@ export function Scene() {
         </mesh>
           </Environment> */}
       {/* <Field /> */}
-      <mesh>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="hotpink" />
-      </mesh>
       <Island rotation={[0, anglToRad(-110), 0]} />
       <WindStreamEffect />
     </>

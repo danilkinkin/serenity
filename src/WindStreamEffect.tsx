@@ -67,8 +67,9 @@ export function WindStreamEffect() {
 
     geometry.rotateX(anglToRad(70))
     const material = new MeshStandardMaterial({
-      color: new Color(0.8, 0.8, 0.8),
+      color: new Color(1, 1, 1),
       side: DoubleSide,
+      toneMapped: false,
     })
     const mesh = new Mesh(geometry, material)
 
@@ -111,7 +112,7 @@ export function WindStreamEffect() {
     rawFlows.forEach(({ flow, debug }) => {
       flow.moveAlongCurve(-flow.uniforms.pathOffset.value + 0.9)
       scene.add(flow.object3D)
-      // scene.add(debug);
+      //scene.add(debug);
     })
 
     setFlows(
@@ -125,7 +126,7 @@ export function WindStreamEffect() {
     return () => {
       rawFlows.forEach(({ flow, debug }) => {
         scene.remove(flow.object3D)
-        // scene.remove(debug);
+        //scene.remove(debug);
       })
     }
   }, [])

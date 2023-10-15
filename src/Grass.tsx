@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { anglToRad } from '@src/utils/angle'
 import { randomize } from '@src/utils/randomize'
 import {
@@ -14,10 +14,10 @@ import {
 } from 'three'
 import { useSpring } from '@react-spring/three'
 import { useWindStore } from './windState'
+import { usePerlin } from './utils/PerlinField'
 
 export function Grass(props) {
   const {
-    perlin,
     quality,
     material,
     geometry: sketchGeometry,
@@ -26,6 +26,8 @@ export function Grass(props) {
     ...restProps
   } = props
   const currWindShift = useRef<number>(0)
+  const perlin = usePerlin()
+  const { scene } = useThree()
   const windStore = useWindStore()
   const springs = useSpring({
     ...windStore[windStore.variant],
