@@ -242,10 +242,10 @@ export function Model(props) {
         <PerlinField perlin={perlin}>
           <Grass quality={6} resistance={2} geometry={nodes.leaf_1_1.geometry} material={materials['Group 11']} position={[-0.731, 3.696, 3.052]} rotation={[1.635, 0.162, -1.897]} />
           
-          <Grass quality={6} resistance={2} geometry={nodes.leaf_2_1.geometry} material={materials['Group 2']} position={[0.614, 3.435, 4.72]} rotation={[1.575, 0.022, -1.792]} />
+          <Grass quality={6} resistance={2} geometry={nodes.leaf_2_1.geometry} material={materials.leaf_2_1} position={[0.614, 3.435, 4.72]} rotation={[1.575, 0.022, -1.792]} />
           <Grass quality={6} resistance={2} geometry={nodes.leaf_2_2.geometry} material={materials.leaf_2_2} position={[-0.407, 2.057, 2.316]} rotation={[1.261, 0.066, -1.774]} />
 
-          <Grass quality={6} resistance={2} geometry={nodes.leaf_3_1.geometry} material={materials['Group 3']} position={[0.785, 3.855, 4.316]} rotation={[1.587, -0.034, -1.885]} />
+          <Grass quality={6} resistance={2} geometry={nodes.leaf_3_1.geometry} material={materials.leaf_3_1} position={[0.785, 3.855, 4.316]} rotation={[1.587, -0.034, -1.885]} />
           <Grass quality={6} resistance={2} geometry={nodes.leaf_3_2.geometry} material={materials.leaf_3_2} position={[2.102, 2.504, 4.669]} rotation={[1.509, -0.008, -2.072]} />
           <Grass quality={6} resistance={2} geometry={nodes.leaf_3_3.geometry} material={materials.leaf_3_3} position={[-0.344, 2.233, 3.004]} rotation={[1.598, 0.108, -1.887]} />
 
@@ -290,16 +290,16 @@ export function Model(props) {
           <Grass quality={3} resistance={1} geometry={nodes.leaf_8_6.geometry} material={materials.leaf_8_6} position={[-4.187, 0.469, -4.637]} rotation={[Math.PI / 2, 0, -1.907]} />
           <Grass quality={3} resistance={1} geometry={nodes.leaf_8_6.geometry} material={materials.leaf_8_6} position={[0.321, 0.805, 1.363]} rotation={[Math.PI / 2, 0, -1.907]} />
 
-          <mesh geometry={nodes.leaf_9_1.geometry} material={materials['Group 13']} position={[-3.13, 0.274, -4.201]} rotation={[1.581, 0.06, -1.606]} />
-          <instancedMesh args={[nodes.Group_13001.geometry, materials['Group 13'], 11]} instanceMatrix={nodes.Group_13001.instanceMatrix} />
-          <instancedMesh args={[nodes.Group_13002.geometry, materials['Group 13'], 7]} instanceMatrix={nodes.Group_13002.instanceMatrix} />
-          <instancedMesh args={[nodes.Group_13003.geometry, materials['Group 13'], 6]} instanceMatrix={nodes.Group_13003.instanceMatrix} />
-          <instancedMesh args={[nodes.Group_13044.geometry, materials['Group 13'], 6]} instanceMatrix={nodes.Group_13044.instanceMatrix} />
-          <instancedMesh args={[nodes.Group_13066.geometry, materials['Group 13'], 7]} instanceMatrix={nodes.Group_13066.instanceMatrix} />
-          <instancedMesh args={[nodes.Group_13068.geometry, materials['Group 13'], 5]} instanceMatrix={nodes.Group_13068.instanceMatrix} />
-          <instancedMesh args={[nodes.Group_13071.geometry, materials['Group 13'], 7]} instanceMatrix={nodes.Group_13071.instanceMatrix} />
-          <instancedMesh args={[nodes.Group_13076.geometry, materials['Group 13'], 5]} instanceMatrix={nodes.Group_13076.instanceMatrix} />
-          <instancedMesh args={[nodes.Group_13088.geometry, materials['Group 13'], 6]} instanceMatrix={nodes.Group_13088.instanceMatrix} />
+          <mesh geometry={nodes.leaf_9_1.geometry} material={materials.leaf_9_1} position={[-3.13, 0.274, -4.201]} rotation={[1.581, 0.06, -1.606]} />
+          <instancedMesh args={[nodes.Group_13001.geometry, materials.leaf_9_1, 11]} instanceMatrix={nodes.Group_13001.instanceMatrix} />
+          <instancedMesh args={[nodes.Group_13002.geometry, materials.leaf_9_1, 7]} instanceMatrix={nodes.Group_13002.instanceMatrix} />
+          <instancedMesh args={[nodes.Group_13003.geometry, materials.leaf_9_1, 6]} instanceMatrix={nodes.Group_13003.instanceMatrix} />
+          <instancedMesh args={[nodes.Group_13044.geometry, materials.leaf_9_1, 6]} instanceMatrix={nodes.Group_13044.instanceMatrix} />
+          <instancedMesh args={[nodes.Group_13066.geometry, materials.leaf_9_1, 7]} instanceMatrix={nodes.Group_13066.instanceMatrix} />
+          <instancedMesh args={[nodes.Group_13068.geometry, materials.leaf_9_1, 5]} instanceMatrix={nodes.Group_13068.instanceMatrix} />
+          <instancedMesh args={[nodes.Group_13071.geometry, materials.leaf_9_1, 7]} instanceMatrix={nodes.Group_13071.instanceMatrix} />
+          <instancedMesh args={[nodes.Group_13076.geometry, materials.leaf_9_1, 5]} instanceMatrix={nodes.Group_13076.instanceMatrix} />
+          <instancedMesh args={[nodes.Group_13088.geometry, materials.leaf_9_1, 6]} instanceMatrix={nodes.Group_13088.instanceMatrix} />
         </PerlinField>
       </group>
       <mesh geometry={nodes.stones.geometry} material={materials.rocks} position={[-3.247, 0.235, -4.361]} rotation={[-1.022, 0.174, 0.315]} />
