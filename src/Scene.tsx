@@ -70,8 +70,8 @@ export function Scene() {
 
     cameraRef.current?.position.set(
       2 - move,
-      4 + 0.05 * Math.sin(state.clock.elapsedTime),
-      18 + distance / 100
+      7 + 0.05 * Math.sin(state.clock.elapsedTime),
+      20 + distance / 30
     )
     cameraRef.current?.lookAt(
       0 - move / 2,
@@ -93,7 +93,7 @@ export function Scene() {
         fov={45}
         near={0.1}
         far={1000}
-        position={[0, 4, 18]}
+        position={[0, 7, 20]}
       />
       {cameraControls.manual && <CameraControls enabled />}
       <axesHelper args={[5]} position={[-2, 3, 1]} />
