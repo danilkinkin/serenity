@@ -7,6 +7,7 @@ precision mediump float;
 #endif
 
 
+uniform sampler2D ocean_texture;
 varying vec2 vUv;
 varying vec3 viewZ;
 varying float depthLevel;
@@ -70,6 +71,8 @@ void main() {
 
   if(depth1 - depth2 < 0.2) {
     gl_FragColor = vec4(color_foam, opacity_foam * smoothstep(0.0, 0.1, depth1 - depth2));
+    
+    //gl_FragColor = texture2D(ocean_texture, vUv);
   } else {
     vec4 depthCol;
     float transition = smoothstep(0.2, 0.4, depth1 - depth2);
@@ -136,6 +139,8 @@ void main() {
     // color -= step(.7,abs(sin(27.0*m_dist)))*.5;
 
     gl_FragColor = color;
+
+    gl_FragColor = texture2D(ocean_texture, vUv);
 
     // gl_FragColor = vec4(color_deep, 1.0);
   }

@@ -26,6 +26,7 @@ import {
   Vector3,
   ShaderLib,
   Material,
+  ClampToEdgeWrapping,
 } from 'three'
 import { useWindStore } from './windState'
 import { Grass } from './Grass'
@@ -35,6 +36,7 @@ import waterFragmentShader from '@src/assests/water.fragmentShader.glsl?raw'
 import waterVertexShader from '@src/assests/water.vertexShader.glsl?raw'
 import waterSimpleFragmentShader from '@src/assests/waterSimple.fragmentShader.glsl?raw'
 import waterSimpleVertexShader from '@src/assests/waterSimple.vertexShader.glsl?raw'
+import oceanTexture from '@src/assests/ocean.png'
 import { PerlinField } from './utils/PerlinField'
 
 function powerOfTwo(x) {
@@ -88,8 +90,8 @@ export function Model(props) {
   const [{ waterMaterial, waterSimpleMaterial, depthMaterial }] = useState(
     () => {
       const textureLoader = new TextureLoader()
-      var dudvMap = textureLoader.load('https://i.imgur.com/hOIsXiZ.png')
-      dudvMap.wrapS = dudvMap.wrapT = RepeatWrapping
+      var oceanTextureMap = textureLoader.load(oceanTexture)
+      oceanTextureMap.wrapS = oceanTextureMap.wrapT = ClampToEdgeWrapping
 
       var uniforms = {
         ...ShaderLib['standard'].uniforms,
@@ -98,6 +100,9 @@ export function Model(props) {
         },
         depth_map: {
           value: renderTarget.depthTexture,
+        },
+        ocean_texture: {
+          value: oceanTextureMap,
         },
         map: {
           value: null,
@@ -185,8 +190,8 @@ export function Model(props) {
     const moveFactor = springsMove.speed.get() * springsMove.force.get()
     const angleFactor = springsAngle.speed.get() * springsAngle.force.get()
 
-    commulutiveTimeOffset.current += moveFactor / 100000
-    waterMaterial.uniforms.uWind.value = moveFactor / 300
+    commulutiveTimeOffset.current += moveFactor / 200000 + 0.01
+    waterMaterial.uniforms.uWind.value = moveFactor / 500 + 40
 
     // waterMeshRef.current.position.y = 0.03 + 0.05 * Math.sin(state.clock.elapsedTime)
     shipAnchorRef.current.position.x = moveFactor / 30000
@@ -227,20 +232,20 @@ export function Model(props) {
   return (
     <group {...props} dispose={null}>
       {/* Water */}
-      {/* <mesh
+      <mesh
         ref={waterMeshRef}
         material={waterMaterial || materials.ocean}
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0.245, 0.081, 0.663]}
+        position={[0.245, 0.08, 0.663]}
       >
-        <planeGeometry args={[27.5, 27.5, 100, 100]} />
-      </mesh> */}
-      <mesh geometry={nodes.ocean.geometry} ref={waterMeshRef} material={materials.ocean} position={[0.245, 0.081, 0.663]} />
-      <mesh geometry={nodes.ocean_sky_box.geometry} material={materials.ocean_skybox} position={[0.245, -9.646, 0.663]} />
+        <planeGeometry args={[27.5, 27.5, 200, 200]} />
+      </mesh>
+      {/* <mesh geometry={nodes.ocean.geometry} ref={waterMeshRef} material={waterMaterial || materials.ocean} position={[0.245, 0.081, 0.663]} /> */}
+      <mesh geometry={nodes.ocean_sky_box.geometry} material={materials.ocean_skybox} position={[0.245, -9.2, 0.663]} scale={0.92} />
       {/* Terrain */}
       <group ref={grassGroupRef}>
         <PerlinField perlin={perlin}>
-          <Grass quality={6} resistance={2} geometry={nodes.leaf_1_1.geometry} material={materials.leaf_1_1} position={[-0.745, 3.648, 3.168]} rotation={[1.071, 0.213, -1.748]} scale={6.971} />
+          <Grass quality={8} resistance={2} geometry={nodes.leaf_1_1.geometry} material={materials.leaf_1_1} position={[-0.745, 3.648, 3.168]} rotation={[1.071, 0.213, -1.748]} scale={6.971} />
           
           <Grass quality={6} resistance={2} geometry={nodes.leaf_2_1.geometry} material={materials.leaf_2_1} position={[0.614, 3.435, 4.72]} rotation={[1.575, 0.022, -1.792]} />
           <Grass quality={6} resistance={2} geometry={nodes.leaf_2_2.geometry} material={materials.leaf_2_2} position={[-0.407, 2.057, 2.316]} rotation={[1.261, 0.066, -1.774]} />
@@ -266,7 +271,7 @@ export function Model(props) {
 
           <Grass quality={3} resistance={1} geometry={nodes.leaf_7_1.geometry} material={materials.leaf_7_1} position={[-4.389, 1.137, -4.49]} rotation={[1.503, 0.121, -1.741]} scale={10.981} />
           <Grass quality={3} resistance={1} geometry={nodes.leaf_7_2.geometry} material={materials.leaf_7_2} position={[-4.124, 1.088, -4.216]} rotation={[1.498, 0.035, -1.746]} scale={1.822} />
-          <Grass quality={3} resistance={1} geometry={nodes.leaf_7_3.geometry} material={materials.leaf_7_3} position={[-3.958, 0.91, -4.084]} rotation={[1.48, -0.041, -1.753]} scale={6.973} />
+          <Grass quality={3} resistance={3} geometry={nodes.leaf_7_3.geometry} material={materials.leaf_7_3} position={[-3.958, 0.91, -4.084]} rotation={[1.48, -0.041, -1.753]} scale={6.973} />
 
           <Grass quality={3} resistance={1} geometry={nodes.leaf_8_1.geometry} material={materials.leaf_8_1} position={[6.251, 1.274, 3.405]} rotation={[1.822, -0.099, -1.998]} />
           <Grass quality={3} resistance={1} geometry={nodes.leaf_8_1.geometry} material={materials.leaf_8_1} position={[3.744, 1.144, 3.39]} rotation={[1.822, -0.099, -1.998]} />
@@ -306,8 +311,8 @@ export function Model(props) {
       <mesh geometry={nodes.terrain.geometry} material={materials.terrain}  />
       {/* Lighthouse */}
       <mesh geometry={nodes.lighthouse.geometry} material={materials.lighthouse} position={[4.027, 1.7, 4.045]} rotation={[0, -0.211, 0]} />
-      <mesh geometry={nodes.barrel_3.geometry} material={materials.barrel} position={[3.055, 0.993, 3.225]} scale={0.1} />
-      <mesh geometry={nodes.box_2.geometry} material={materials.box} position={[3.264, 1.003, 3.32]} scale={0.087} />
+      <mesh geometry={nodes.barrel_3.geometry} material={materials.barrel} position={[3.055, 1.075, 3.225]} rotation={[0.004, -0.003, 0.075]} scale={0.1} />
+      <mesh geometry={nodes.box_2.geometry} material={materials.box} position={[3.264, 1.084, 3.32]} rotation={[0.002, -0.007, 0.072]} scale={0.087} />
       <mesh geometry={nodes.dock.geometry} material={materials.dock} position={[-0.938, 0.219, -3.218]} rotation={[0, -0.543, 0]} />
       {/* Ship */}
       <group position={[0.968, 0.039, -4.976]}>
@@ -317,7 +322,8 @@ export function Model(props) {
               <group position={[-0.968, -0.039, 4.976]}>
                 <mesh geometry={nodes.string.geometry} material={materials.string} position={[0.708, 0.183, -4.669]} rotation={[0.001, -0.145, -0.003]} />
                 <mesh geometry={nodes.ship.geometry} material={materials.ship} position={[0.717, 0.223, -4.68]} rotation={[1.572, -0.003, -0.87]} />
-                <mesh geometry={nodes.lifebuoy_1.geometry} material={materials.circle} position={[1.396, 0.226, -5.109]} rotation={[-0.213, -0.189, -1.751]} />
+                <mesh geometry={nodes.lifebuoy_2.geometry} material={materials.circle} position={[1.025, 0.226, -5.418]} rotation={[2.618, 1.093, 1.871]} />
+                <mesh geometry={nodes.lifebuoy_2001.geometry} material={materials['circle.001']} position={[1.025, 0.226, -5.418]} rotation={[2.618, 1.093, 1.871]} />
                 <mesh geometry={nodes.ship_origin.geometry} material={nodes.ship_origin.material} position={[0.968, 0.039, -4.976]} rotation={[0, -0.708, 0]} />
               </group>
             </group>

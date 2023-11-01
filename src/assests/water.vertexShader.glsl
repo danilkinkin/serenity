@@ -64,7 +64,7 @@ mat2 rotate2d(float _angle){
 }
 
 void main() {
-  vUv = uv * rotate2d(PI * (-20.0 / 180.0));
+  vUv = uv;// * rotate2d(PI * (-20.0 / 180.0));
   vec2 rTimeSpeed = vec2(uTime) * rotate2d(PI * ((70.0) / 180.0)) * 0.5;
   vec2 rTimeSlow = vec2(uTime) * rotate2d(PI * ((70.0) / 180.0)) * 0.2;
 
@@ -75,7 +75,7 @@ void main() {
   vec3 noisePosSmall = vec3(pos.x * noiseFreq + rTimeSpeed.x, pos.y * noiseFreq + rTimeSpeed.y, pos.z);
 
   float windForce = max(uWind / 20.0, 1.0);
-  float waveBig = (snoiseWater(noisePosBig) * 0.8);
+  float waveBig = (snoiseWater(noisePosBig) * 0.3);
   float waveSmall = (snoiseFoam(noisePosSmall) * 0.1);
   float displace = (waveBig + waveSmall);
 

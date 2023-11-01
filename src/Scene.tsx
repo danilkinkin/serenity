@@ -83,7 +83,7 @@ export function Scene() {
   useHelper(pointLightRef, PointLightHelper, 5, 'red')
   useHelper(directionalLightRef, DirectionalLightHelper, 5, 'red')
 
-  const bgColor = new Color(0xffecca);
+  const bgColor = new Color(0xfef8f5);
 
   return (
     <>
@@ -96,26 +96,13 @@ export function Scene() {
         position={[0, 7, 20]}
       />
       {cameraControls.manual && <CameraControls enabled />}
-      <axesHelper args={[5]} position={[-2, 3, 1]} />
-      <axesHelper args={[2]} position={[0, 0, 0]} />
+      {/*<axesHelper args={[5]} position={[-2, 3, 1]} />
+      <axesHelper args={[2]} position={[0, 0, 0]} />*/}
       <color
         attach="background"
         args={[bgColor.r, bgColor.g, bgColor.b]}
       />
-      <ambientLight color="#FFFCDB" intensity={1}  />
-    {/* <ambientLight /> */}
-    {/* <pointLight position={[10, 10, 10]} /> */}
-    {/* <directionalLight ref={directionalLightRef} position={[0, 0, 0]} /> */}
-      {/*<pointLight ref={pointLightRef} position={[1, 1, 1]} /> */}
-      {/* <Environment background resolution={64}>
-        <mesh scale={1000}>
-          <sphereGeometry args={[1, 64, 64]} />
-          <LayerMaterial side={BackSide}>
-            <Color color="#E4F5FF" alpha={1} mode="normal" />
-          </LayerMaterial>
-        </mesh>
-          </Environment> */}
-      {/* <Field /> */}
+      <ambientLight color="#fef8f5" intensity={1}  />
       <Island rotation={[0, anglToRad(-110), 0]} />
       <WindStreamEffect />
     </>
