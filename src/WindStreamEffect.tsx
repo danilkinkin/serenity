@@ -67,7 +67,7 @@ export function WindStreamEffect() {
 
     geometry.rotateX(anglToRad(70))
     const material = new MeshStandardMaterial({
-      color: new Color(1, 1, 1),
+      color: new Color(0xe8f4ff),
       side: DoubleSide,
       toneMapped: false,
     })
