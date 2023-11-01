@@ -34,8 +34,6 @@ import { ImprovedNoise } from 'three/examples/jsm/math/ImprovedNoise'
 import { useSpring } from '@react-spring/three'
 import waterFragmentShader from '@src/assests/water.fragmentShader.glsl?raw'
 import waterVertexShader from '@src/assests/water.vertexShader.glsl?raw'
-import waterSimpleFragmentShader from '@src/assests/waterSimple.fragmentShader.glsl?raw'
-import waterSimpleVertexShader from '@src/assests/waterSimple.vertexShader.glsl?raw'
 import oceanTexture from '@src/assests/ocean.png'
 import { PerlinField } from './utils/PerlinField'
 
@@ -87,7 +85,7 @@ export function Model(props) {
     return { renderTarget }
   })
 
-  const [{ waterMaterial, waterSimpleMaterial, depthMaterial }] = useState(
+  const [{ waterMaterial, depthMaterial }] = useState(
     () => {
       const textureLoader = new TextureLoader()
       var oceanTextureMap = textureLoader.load(oceanTexture)
@@ -163,16 +161,7 @@ export function Model(props) {
         colorWrite: false,
       })
 
-      var waterSimpleMaterial = new ShaderMaterial({
-        uniforms: UniformsUtils.merge([UniformsLib['fog'], uniforms]),
-        vertexShader: waterSimpleVertexShader,
-        fragmentShader: waterSimpleFragmentShader,
-        transparent: true,
-        //wireframe: true,
-        fog: true,
-      })
-
-      return { waterMaterial, waterSimpleMaterial, depthMaterial }
+      return { waterMaterial, depthMaterial }
     }
   )
 
@@ -215,7 +204,6 @@ export function Model(props) {
     renderTarget.setSize(powerOfTwo(temp.x), powerOfTwo(temp.y))
 
     waterMeshRef.current.visible = false
-    //waterFarMeshRef.current.visible = false
     grassGroupRef.current.visible = false
     gl.setRenderTarget(renderTarget)
     scene.overrideMaterial = depthMaterial
@@ -224,7 +212,6 @@ export function Model(props) {
 
     gl.setRenderTarget(null)
     waterMeshRef.current.visible = true
-    //waterFarMeshRef.current.visible = true
     grassGroupRef.current.visible = true
     scene.overrideMaterial = null
   }, -1)
@@ -240,7 +227,6 @@ export function Model(props) {
       >
         <planeGeometry args={[27.5, 27.5, 200, 200]} />
       </mesh>
-      {/* <mesh geometry={nodes.ocean.geometry} ref={waterMeshRef} material={waterMaterial || materials.ocean} position={[0.245, 0.081, 0.663]} /> */}
       <mesh geometry={nodes.ocean_sky_box.geometry} material={materials.ocean_skybox} position={[0.245, -9.2, 0.663]} scale={0.92} />
       {/* Terrain */}
       <group ref={grassGroupRef}>
