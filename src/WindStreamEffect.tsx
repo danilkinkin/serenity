@@ -16,6 +16,7 @@ import {
   DoubleSide,
   SphereGeometry,
   Group,
+  MeshBasicMaterial,
 } from 'three'
 import { Flow } from 'three/examples/jsm/modifiers/CurveModifier'
 import { useWindStore } from './windState'
@@ -66,7 +67,7 @@ export function WindStreamEffect() {
     )
 
     geometry.rotateX(anglToRad(70))
-    const material = new MeshStandardMaterial({
+    const material = new MeshBasicMaterial({
       color: new Color(0xe8f4ff),
       side: DoubleSide,
       toneMapped: false,
