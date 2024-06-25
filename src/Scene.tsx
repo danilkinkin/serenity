@@ -31,9 +31,11 @@ export function Scene() {
   const directionalLightRef = useRef<DirectionalLight>()
   const currWindShift = useRef<number>(0)
   const [isLoaded, setIsLoad] = useState(false)
-  const cameraControls = useControls('Camera', {
+  const cameraControls = {
     manual: false,
-  })
+  } /*useControls('Camera', {
+    manual: false,
+  })*/
   const windStore = useWindStore()
   const springsMove = useSpring({
     ...windStore[windStore.variant],

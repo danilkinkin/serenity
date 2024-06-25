@@ -25,7 +25,7 @@ export function WindStreamEffect() {
   const { scene, camera } = useThree()
   const [flows, setFlows] =
     useState<{ flow: Flow; speedShift: number; windMesh: Mesh }[]>(null)
-  const windEffect = useControls('WindEffect', {
+  const windEffect = {
     flowSize: 0.4,
     flowLength: 4,
     steps: 10,
@@ -33,7 +33,7 @@ export function WindStreamEffect() {
     randomizeSize: 0.3,
     randomizeLength: 3,
     randomizeSpeed: 2,
-  })
+  }
   const windStore = useWindStore()
 
   const leftX = -30

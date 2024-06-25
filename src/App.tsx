@@ -11,11 +11,16 @@ import { useWindStore } from './windState'
 import { LayerMaterial, Depth, Noise } from 'lamina'
 
 function Field() {
-  const { density, size, randomizeShift } = useControls('Field', {
+  const { density, size, randomizeShift } = {
     density: 2,
     size: 10,
     randomizeShift: 1,
-  })
+  }
+  /*const { density, size, randomizeShift } = useControls('Field', {
+    density: 2,
+    size: 10,
+    randomizeShift: 1,
+  })*/
   const [perlin] = useState(() => new ImprovedNoise())
 
   const countPerSide = density * size
@@ -68,7 +73,7 @@ function App() {
       <Suspense fallback={<Html>loading...</Html>}>
         <Scene />
       </Suspense>
-      <Stats />
+      {/*<Stats />*/}
     </Canvas>
   )
 }
